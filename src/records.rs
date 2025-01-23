@@ -1,8 +1,8 @@
-extern crate byte;
+#![allow(unused_parens)]
 use byte::ctx;
 use byte::{BytesExt, TryRead, TryWrite};
 
-use types::*;
+use crate::types::*;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Header {
