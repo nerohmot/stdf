@@ -1,6 +1,16 @@
 extern crate clap;
 
 use clap::{Arg, Command, crate_version, crate_authors, ArgAction};
+use std::fs::File;
+// use std::io::{Error, ErrorKind, Result};
+use std::process;
+use stdf::get_endian_from_file;
+use stdf::records::{Header, V4};
+use memmap::MmapOptions;
+use std::io::{Error, ErrorKind};
+use byte::BytesExt;
+
+// use byte::ctx::Endian;
 
 fn main() {
     let matches = Command::new("stdf")
@@ -8,14 +18,36 @@ fn main() {
         .author(crate_authors!("\n"))
         .about("Standard Test Data Format (STDF) serialization and data processing")
         .subcommand(
-            Command::new("dump")
-                .about("Dumps the content of the input file")
+            Command::new("endian")
+                .about("Determines the endian of the given STDF file.")
                 .arg(
                     Arg::new("input_file")
                         .short('i')
                         .long("input_file")
                         .required(true)
                         .help("Sets the input file to use"),
+                ),
+        )
+        .subcommand(
+            Command::new("records")
+                .about("Lists the records in the STDF file."),
+        )
+        .subcommand(
+            Command::new("dump")
+                .about("Dumps the STDF file in a more readable form to the console.")
+                .arg(
+                    Arg::new("input_file")
+                        .short('i')
+                        .long("input_file")
+                        .required(true)
+                        .help("Sets the input file to use"),
+                )
+                .arg(
+                    Arg::new("records")
+                        .short('r')
+                        .long("records")
+                        .required(false)
+                        .help("Sets the list of records to dump. (see `stdf records` for a valid list of records)`"),
                 ),
         )
         .subcommand(
@@ -89,10 +121,83 @@ fn main() {
         .get_matches();
 
     match matches.subcommand() {
-        Some(("dump", sub_m)) => {
+        Some(("records", sub_m)) => {
+            println!("FAR : File Attributes Record");
+            println!("ATR : Audit Trail Record");
+            println!("MIR : Master Information Record");
+            println!("MRR : Master Results Record");
+            println!("PCR : Part Count Record");
+            println!("HBR : Hardware Bin Record");
+            println!("SBR : Software Bin Record");
+            println!("PMR : Pin Map Record");
+            println!("PGR : Pin Group Record");
+            println!("PLR : Pin List Record");
+            println!("RDR : Retest Data Record");
+            println!("SDR : Site Description Record");
+            println!("WIR : Wafer Information Record");
+            println!("WRR : Wafer Results Record");
+            println!("WCR : Wafer Configuration Record");
+            println!("PIR : Part Information Record");
+            println!("PRR : Part Results Record");
+            println!("TSR : Test Synopsis Record");
+            println!("PTR : Parametric Test Record");
+            println!("MPR : Multiple-Result Parametric Record");
+            println!("FTR : Functional Test Record");
+            println!("BPS : Begin Program Section Record");
+            println!("EPS : End Program Section Record");
+            println!("GDR : Generic Data Record");
+            println!("DTR : Data Record");
+        }
+        Some(("endian", sub_m)) => {
             let input_file = sub_m.get_one::<String>("input_file").unwrap();
-            println!("Dumping the content of the file: {}", input_file);
-            // Add your logic for the "dump" subcommand here
+            let file = File::open(input_file);
+            if file.is_err() {
+                println!("Error: {}", file.err().unwrap());
+                process::exit(1);
+            }
+            match get_endian_from_file(&mut file.unwrap()) {
+                Ok(Some(endian)) => {
+                    match endian {
+                        byte::ctx::Endian::Big => println!("BE"),
+                        byte::ctx::Endian::Little => println!("LE")
+                    }
+                },
+                Ok(None) => {
+                    println!("Error: NO STDF file!");
+                    process::exit(1);
+                },
+                Err(e) => {
+                    println!("Error: {}", e);
+                    process::exit(1);
+                }
+            }
+        }
+        Some(("dump", sub_m)) => {
+            let input_file_name = sub_m.get_one::<String>("input_file").unwrap();
+            let mut input_file = File::open(input_file_name).unwrap();
+            let endian = match get_endian_from_file(&mut input_file) {
+                Ok(Some(endian)) => endian,
+                Ok(None) => {
+                    println!("Error: NO STDF file!");
+                    process::exit(1);
+                },
+                Err(e) => {
+                    println!("Error: {}", e);
+                    process::exit(1);
+                }
+            };
+
+            let m = unsafe { MmapOptions::new().map(&input_file).unwrap() };
+            let bytes = &m[..];
+            let offset = &mut 0;
+            loop {
+                match bytes.read_with::<V4>(offset, endian) {
+                    Ok(v4) => println!("{:?}", v4),
+                    // Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
+                    // Err(e) => println!("Error : {:?}", e),
+                    _ => {}
+                };
+            }
         }
         Some(("count", sub_m)) => {
             let input_file = sub_m.get_one::<String>("input_file").unwrap();
