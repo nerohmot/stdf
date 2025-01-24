@@ -1,5 +1,6 @@
 extern crate clap;
-use clap::{Arg, Command, crate_version, crate_authors};
+
+use clap::{Arg, Command, crate_version, crate_authors, ArgAction};
 
 fn main() {
     let matches = Command::new("stdf")
@@ -40,6 +41,21 @@ fn main() {
                                 .long("input_file")
                                 .required(true)
                                 .help("Sets the input file to use"),
+                        )
+                        .arg(
+                            Arg::new("output_file")
+                                .short('o')
+                                .long("output_file")
+                                .required(false)
+                                .help("Sets the output file to use"),
+                        )
+                        .arg(
+                            Arg::new("progress_bar")
+                                .short('p')
+                                .long("progress_bar")
+                                .required(false)
+                                .action(ArgAction::SetTrue)
+                                .help("Displays a status bar while processing"),
                         ),
                 )
                 .subcommand(
@@ -51,7 +67,23 @@ fn main() {
                                 .long("input_file")
                                 .required(true)
                                 .help("Sets the input file to use"),
+                        )
+                        .arg(
+                            Arg::new("output_file")
+                                .short('o')
+                                .long("output_file")
+                                .required(false)
+                                .help("Sets the output file to use"),
+                        )
+                        .arg(
+                            Arg::new("progress_bar")
+                                .short('p')
+                                .long("progress_bar")
+                                .required(false)
+                                .action(ArgAction::SetTrue)
+                                .help("Displays a status bar while processing"),
                         ),
+
                 ),
         )
         .get_matches();
@@ -71,12 +103,17 @@ fn main() {
             match sub_m.subcommand() {
                 Some(("csv", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
-                    println!("Converting the file to CSV: {}", input_file);
+                    let default_output_file = format!("{}.csv", input_file);
+                    let output_file = sub_sub_m.get_one::<String>("output_file").unwrap_or(&default_output_file);
+                    println!("Converting the STDF file '{}' to CSV file '{}'", input_file, output_file);
+                    println!("Progress bar: {}", sub_sub_m.get_flag("progress_bar"));
                     // Add your logic for the "csv" subcommand here
                 }
                 Some(("xlsx", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
-                    println!("Converting the file to XLSX: {}", input_file);
+                    let default_output_file = format!("{}.xlsx", input_file);
+                    let output_file = sub_sub_m.get_one::<String>("output_file").unwrap_or(&default_output_file);
+                    println!("Converting the STDF file '{}' to XLSX file '{}'", input_file, output_file);
                     // Add your logic for the "xlsx" subcommand here
                 }
                 _ => eprintln!("No valid subcommand was used for convert_to"),
