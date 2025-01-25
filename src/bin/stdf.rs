@@ -1,22 +1,18 @@
 extern crate clap;
 
 use clap::{Arg, Command, crate_version, crate_authors, ArgAction};
+use stdf::records::V4;
 use std::fs::File;
-// use std::io::{Error, ErrorKind, Result};
 use std::process;
-use stdf::get_endian_from_file;
-use stdf::records::{Header, V4};
+use stdf::{get_endian_from_file, get_index_from_file};
 use memmap::MmapOptions;
-use std::io::{Error, ErrorKind};
 use byte::BytesExt;
-
-// use byte::ctx::Endian;
 
 fn main() {
     let matches = Command::new("stdf")
         .version(crate_version!())
         .author(crate_authors!("\n"))
-        .about("Standard Test Data Format (STDF) serialization and data processing")
+        .about("Standard Test Data Format (STDF) data processing")
         .subcommand(
             Command::new("endian")
                 .about("Determines the endian of the given STDF file.")
@@ -50,19 +46,84 @@ fn main() {
                         .help("Sets the list of records to dump. (see `stdf records` for a valid list of records)`"),
                 ),
         )
-        .subcommand(
-            Command::new("count")
-                .about("Counts the records in the input file")
-                .arg(
-                    Arg::new("input_file")
-                        .short('i')
-                        .long("input_file")
-                        .required(true)
-                        .help("Sets the input file to use"),
+        .subcommand(Command::new("count")
+            .about("Counts various thing in the STDF file")
+            .subcommand(Command::new("records")
+                .about("Counts the records in the STDF file")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("verbosity")
+                    .short('v')
+                    .long("verbose")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Sets the verbosity to high"),
+                )
+                .arg(Arg::new("record_list")
+                    .short('r')
+                    .long("records")
+                    .required(false)
+                    .num_args(1..)
+                    .help("Limits the records to count to the given ones"),
                 ),
-        )
+            )
+            .subcommand(Command::new("parts")
+                .about("Counts the parts in the STDF file")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("verbosity")
+                    .short('v')
+                    .long("verbose")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Sets the verbosity to high"),
+                )
+            )
+            .subcommand(Command::new("tests")
+                .about("Counts the number of unique tests in the STDF file")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("verbosity")
+                    .short('v')
+                    .long("verbose")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Sets the verbosity to high"),
+                )
+            )
+                .subcommand(Command::new("sites")
+                .about("Counts the number of sites in the STDF file")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+                .subcommand(Command::new("heads")
+                .about("Counts the number of heads in the STDF file")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            ), 
+         )
         .subcommand(
-            Command::new("convert_to")
+            Command::new("to")
                 .about("Converts the input file to another format")
                 .subcommand(
                     Command::new("csv")
@@ -115,7 +176,6 @@ fn main() {
                                 .action(ArgAction::SetTrue)
                                 .help("Displays a status bar while processing"),
                         ),
-
                 ),
         )
         .get_matches();
@@ -200,11 +260,35 @@ fn main() {
             }
         }
         Some(("count", sub_m)) => {
-            let input_file = sub_m.get_one::<String>("input_file").unwrap();
-            println!("Counting the records in the file: {}", input_file);
-            // Add your logic for the "count" subcommand here
+            match sub_m.subcommand() {
+                Some(("records", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let index = get_index_from_file(&mut file).unwrap();
+                    for (key, value) in index.iter() {
+                        println!("({}, {}) : {}", key.0, key.1, value.len());
+                    }
+                
+
+
+                    // println!("{:?}", index);
+                }
+                Some(("parts", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                }
+                Some(("tests", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                }
+                Some(("sites", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                }
+                Some(("heads", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                }
+                _ => eprintln!("No valid subcommand was used for convert_to"),
+            }
         }
-        Some(("convert_to", sub_m)) => {
+        Some(("to", sub_m)) => {
             match sub_m.subcommand() {
                 Some(("csv", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();

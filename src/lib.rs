@@ -6,9 +6,93 @@ extern crate stdf_record_derive;
 pub mod records;
 pub mod types;
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Result};
 use byte::ctx::Endian;
+
+
+
+
+/// Indexes the records in an STDF (Standard Test Data Format) file.
+///
+/// This function reads through an STDF file and creates an index of the records
+/// based on their type and subtype. The index is a `HashMap` where the keys are
+/// tuples of `(record_type, record_subtype)` and the values are vectors of file
+/// positions where the records are located.
+///
+/// # Arguments
+///
+/// * `file` - A mutable reference to the STDF file to be indexed.
+///
+/// # Returns
+///
+/// A `Result` containing a `HashMap` with the index of the records if successful,
+/// or an `io::Error` if an error occurs during file operations.
+///
+/// # Errors
+///
+/// This function will return an error if there are issues reading from the file
+/// or seeking within the file.
+///
+/// # Panics
+///
+/// This function will panic if the endianness of the file cannot be determined.
+///
+/// # Examples
+///
+/// ```
+/// use std::fs::File;
+/// use std::io::Result;
+/// use std::collections::HashMap;
+/// use stdf::get_index_from_file;
+/// 
+/// fn main() -> Result<()> {
+///     let mut file = File::open("tests/test_data/test.stdf")?;
+///     let index = get_index_from_file(&mut file)?;
+///     println!("{:?}", index);
+///     Ok(())
+/// }
+/// ```
+pub fn get_index_from_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec<u64>>> {
+    let mut index = HashMap::new();
+    let endian = get_endian_from_file(file)?;
+    if endian.is_none() {
+        panic!("Endianess not detected");
+    } 
+
+    let saved_position = file.seek(SeekFrom::Current(0))?;
+    let file_length = file.seek(SeekFrom::End(0))?;
+    file.seek(SeekFrom::Start(0))?;
+
+    let mut rec_len = [0_u8; 2];
+    let mut rec_typ = [0_u8; 1];
+    let mut rec_sub = [0_u8; 1];
+    let mut pos:u64 = 0;
+    
+    loop {
+        if file_length - pos < 4 { break; }
+        file.read_exact(&mut rec_len)?;
+        file.read_exact(&mut rec_typ)?;
+        file.read_exact(&mut rec_sub)?;
+        pos += 4;
+        let rec_size = match endian {
+            Some(Endian::Little) => u16::from_le_bytes(rec_len),
+            Some(Endian::Big) => u16::from_be_bytes(rec_len),
+            None => panic!("Endianess not detected"),
+        };
+        pos += rec_size as u64;
+        if pos > file_length { break; }
+        if index.contains_key(&(rec_typ[0], rec_sub[0])) {
+            let vec:&mut Vec<u64>  = index.get_mut(&(rec_typ[0], rec_sub[0])).unwrap();
+            vec.push(pos.clone());
+        } else {
+            index.insert((rec_typ[0], rec_sub[0]), vec![pos.clone()]);
+        }
+    }
+    file.seek(SeekFrom::Start(saved_position))?;
+    Ok(index)
+}
 
 /// Determines the endianness of a file based on its content.
 ///
@@ -30,9 +114,29 @@ use byte::ctx::Endian;
 /// # Errors
 ///
 /// This function will return an error if any I/O operation fails.
+///
+/// # Examples
+///
+/// ```
+/// use std::fs::File;
+/// use std::io::Result;
+/// use byte::ctx::Endian;
+/// use stdf::get_endian_from_file;
+/// 
+/// fn main() -> Result<()> {
+///     let mut file = File::open("tests/test_data/test.stdf")?;
+///     match get_endian_from_file(&mut file)? {
+///         Some(Endian::Little) => println!("File is little-endian"),
+///         Some(Endian::Big) => println!("File is big-endian"),
+///         None => println!("File is not an STDF file"),
+///     }
+///     Ok(())
+/// }
+/// ```
 pub fn get_endian_from_file(file: &mut File) -> Result<Option<Endian>> {
     let saved_position = file.seek(SeekFrom::Current(0))?;
-    if file.seek(SeekFrom::End(0))? < 4 {
+    let end_pos = file.seek(SeekFrom::End(0))?;
+    if end_pos < 6 {
         return Ok(None);
     }
     file.seek(SeekFrom::Start(0))?;

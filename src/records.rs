@@ -776,6 +776,122 @@ impl<'a> V4<'a> {
     }
 }
 
+/// Returns the name of the STDF record type and subtype.
+///
+/// This function takes a record type and subtype as input and returns the
+/// corresponding name of the STDF (Standard Test Data Format) record. If the
+/// type and subtype combination is not recognized, it returns "Unknown".
+///
+/// # Arguments
+///
+/// * `typ` - The record type as a `u8`.
+/// * `sub` - The record subtype as a `u8`.
+///
+/// # Returns
+///
+/// A `&'static str` representing the name of the STDF record type and subtype.
+///
+/// # Examples
+///
+/// ```
+/// use stdf::records::typ_sub_to_name;
+///
+/// let name = typ_sub_to_name(1, 10);
+/// assert_eq!(name, "MIR");
+///
+/// let unknown_name = typ_sub_to_name(99, 99);
+/// assert_eq!(unknown_name, "Unknown");
+/// ```
+pub fn typ_sub_to_name(typ: u8, sub: u8) -> &'static str {
+    match (typ, sub) {
+        (0, 10) => "FAR",
+        (0, 20) => "ATR",
+        (1, 10) => "MIR",
+        (1, 20) => "MRR",
+        (1, 30) => "PCR",
+        (1, 40) => "HBR",
+        (1, 50) => "SBR",
+        (1, 60) => "PMR",
+        (1, 62) => "PGR",
+        (1, 63) => "PLR",
+        (1, 70) => "RDR",
+        (1, 80) => "SDR",
+        (2, 10) => "WIR",
+        (2, 20) => "WRR",
+        (2, 30) => "WCR",
+        (5, 10) => "PIR",
+        (5, 20) => "PRR",
+        (10, 30) => "TSR",
+        (15, 10) => "PTR",
+        (15, 15) => "MPR",
+        (15, 20) => "FTR",
+        (20, 10) => "BPS",
+        (20, 20) => "EPS",
+        (50, 10) => "GDR",
+        (50, 30) => "DTR",
+        _ => "Unknown",
+    }
+}
+
+/// Returns the type and subtype of the STDF record given its name.
+///
+/// This function takes the name of an STDF (Standard Test Data Format) record
+/// and returns a tuple containing the record type and subtype as `u8` values.
+/// If the name is not recognized, it returns `(0, 0)`.
+///
+/// # Arguments
+///
+/// * `name` - The name of the STDF record as a `&str`.
+///
+/// # Returns
+///
+/// A `(u8, u8)` tuple representing the type and subtype of the STDF record.
+///
+/// # Examples
+///
+/// ```
+/// use stdf::records::name_to_typ_sub;
+///
+/// let typ_sub = name_to_typ_sub("MIR");
+/// assert_eq!(typ_sub, (1, 10));
+///
+/// let unknown_typ_sub = name_to_typ_sub("UNKNOWN");
+/// assert_eq!(unknown_typ_sub, (0, 0));
+/// ```
+pub fn name_to_typ_sub(name: &str) -> (u8, u8) {
+    match name {
+        "FAR" => (0, 10),
+        "ATR" => (0, 20),
+        "MIR" => (1, 10),
+        "MRR" => (1, 20),
+        "PCR" => (1, 30),
+        "HBR" => (1, 40),
+        "SBR" => (1, 50),
+        "PMR" => (1, 60),
+        "PGR" => (1, 62),
+        "PLR" => (1, 63),
+        "RDR" => (1, 70),
+        "SDR" => (1, 80),
+        "WIR" => (2, 10),
+        "WRR" => (2, 20),
+        "WCR" => (2, 30),
+        "PIR" => (5, 10),
+        "PRR" => (5, 20),
+        "TSR" => (10, 30),
+        "PTR" => (15, 10),
+        "MPR" => (15, 15),
+        "FTR" => (15, 20),
+        "BPS" => (20, 10),
+        "EPS" => (20, 20),
+        "GDR" => (50, 10),
+        "DTR" => (50, 30),
+        _ => (0, 0),
+    }
+}
+
+
+
+
 #[cfg(test)]
 mod tests {
 

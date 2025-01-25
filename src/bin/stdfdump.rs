@@ -32,7 +32,9 @@ fn dump_stdf(filename: &str) -> Result<(), Error> {
     let offset = &mut 0;
     loop {
         match bytes.read_with::<V4>(offset, endian) {
-            Ok(v4) => println!("{:?}", v4),
+            Ok(v4) => {
+                println!("{:?}", v4)
+            },
             Err(byte::Error::BadOffset(x)) => {
                 if x == bytes.len() {
                     return Ok(());
