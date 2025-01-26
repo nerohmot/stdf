@@ -4,6 +4,7 @@ use std::fmt;
 extern crate byte;
 use byte::ctx;
 use byte::{check_len, BytesExt, TryRead, TryWrite};
+use chrono::DateTime;
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct B1(pub u8);
@@ -22,6 +23,9 @@ pub struct U2(pub u16);
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct U4(pub u32);
+
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+pub struct U4E(pub u32);
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub struct U8(pub u64);
@@ -95,6 +99,36 @@ single_byte_type!(U1, u8);
 single_byte_type!(I1, i8);
 single_byte_type!(N1, u8);
 
+impl fmt::Display for B1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:08b}", self.0)
+    }
+}
+
+impl fmt::Display for C1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0 as char)
+    }
+}
+
+impl fmt::Display for U1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for I1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for N1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0 & 0b0000_1111)
+    }
+}
+
 macro_rules! fixed_multi_byte_type {
     ($field_type:ident, $internal_type:ident, $byte_length:expr) => {
         impl<'a> TryRead<'a, ctx::Endian> for $field_type {
@@ -136,12 +170,69 @@ macro_rules! fixed_multi_byte_type {
 
 fixed_multi_byte_type!(U2, u16, 2);
 fixed_multi_byte_type!(U4, u32, 4);
+fixed_multi_byte_type!(U4E, u32, 4);
 fixed_multi_byte_type!(U8, u64, 8);
 fixed_multi_byte_type!(I2, i16, 2);
 fixed_multi_byte_type!(I4, i32, 4);
 fixed_multi_byte_type!(I8, i64, 8);
 fixed_multi_byte_type!(R4, f32, 4);
 fixed_multi_byte_type!(R8, f64, 8);
+
+impl fmt::Display for U2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for U4 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for U4E {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let datetime  = DateTime::from_timestamp(self.0 as i64, 0).unwrap();
+        let formatted_datetime = datetime.format("%A %B %d %Y @ %H:%M:%S").to_string();
+        write!(f, "{}", formatted_datetime)
+    }
+}
+
+impl fmt::Display for U8 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for I2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for I4 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for I8 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for R4 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl fmt::Display for R8 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 macro_rules! variable_length_type {
     ($field_type:ident) => {
@@ -180,6 +271,12 @@ impl<'a> fmt::Debug for Cn<'a> {
     }
 }
 
+impl<'a> fmt::Display for Cn<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(&self.0))
+    }
+}
+
 fn to_hex_string(bytes: &[u8]) -> String {
     bytes
         .iter()
@@ -193,9 +290,23 @@ impl<'a> fmt::Debug for Bn<'a> {
     }
 }
 
+impl<'a> fmt::Display for Bn<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", to_hex_string(&self.0))
+    }
+}
+
 impl<'a> fmt::Debug for Dn<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, r#"Dn("{}")"#, to_hex_string(&self.1))
+    }
+}
+
+impl<'a> fmt::Display for Dn<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // TODO: implement display for Dn, self.0 = # of nibbles, self.1 = data 
+        // it should display something like '0100 0010 1111' ... or maybe with /n and nibble numbers ...
+        write!(f, "{}", to_hex_string(&self.1))
     }
 }
 
@@ -333,6 +444,8 @@ impl<'a> TryWrite<ctx::Endian> for Vn<'a> {
         Ok(offset)
     }
 }
+
+
 
 #[cfg(test)]
 mod tests {

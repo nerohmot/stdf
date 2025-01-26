@@ -11,8 +11,12 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Result};
 use byte::ctx::Endian;
 
-
-
+// TODO: Document this function
+pub fn has_mmr_at_end(file: &mut File) -> Result<bool> {
+    // TODO: Implement this function
+    // try to also return the number of trailing bytes ...
+    Ok(true)
+}
 
 /// Indexes the records in an STDF (Standard Test Data Format) file.
 ///
@@ -75,20 +79,20 @@ pub fn get_index_from_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec<u64>
         file.read_exact(&mut rec_len)?;
         file.read_exact(&mut rec_typ)?;
         file.read_exact(&mut rec_sub)?;
-        pos += 4;
         let rec_size = match endian {
-            Some(Endian::Little) => u16::from_le_bytes(rec_len),
-            Some(Endian::Big) => u16::from_be_bytes(rec_len),
+            Some(Endian::Little) => u16::from_le_bytes(rec_len) as i64,
+            Some(Endian::Big) => u16::from_be_bytes(rec_len) as i64,
             None => panic!("Endianess not detected"),
         };
-        pos += rec_size as u64;
-        if pos > file_length { break; }
+        if file_length - pos < rec_size as u64 { break; }
         if index.contains_key(&(rec_typ[0], rec_sub[0])) {
             let vec:&mut Vec<u64>  = index.get_mut(&(rec_typ[0], rec_sub[0])).unwrap();
             vec.push(pos.clone());
         } else {
             index.insert((rec_typ[0], rec_sub[0]), vec![pos.clone()]);
         }
+        pos += 4 + rec_size as u64;
+        file.seek(SeekFrom::Current(rec_size))?; // skip the record data
     }
     file.seek(SeekFrom::Start(saved_position))?;
     Ok(index)
@@ -164,7 +168,7 @@ pub fn get_endian_from_file(file: &mut File) -> Result<Option<Endian>> {
 }
 
 #[cfg(test)]
-mod lib {
+mod tests {
     use super::*;
     use std::io::Write;
     use tempfile::tempfile;

@@ -1,7 +1,5 @@
 stdf 
     endian -i tests/test_data/test.stdf
-    
-    yield -i tests/test_data/test.stdf -v -f
 
     show
     list 
@@ -14,26 +12,26 @@ stdf
     is
         ws -i tests/test_data/test.stdf
         ft -i tests/test_data/test.stdf
+        be -i tests/test_data/test.stdf
+        le -i tests/test_data/test.stdf
         clean -i tests/test_data/test.stdf --> ends with MRR
+        finished
         retest -i tests/test_data/test.stdf
+        concatenable -i file1.stdf -i file2.stdf
 
     count 
-        records -i tests/test_data/test.stdf -v -r FAR MIR ...
-        parts -i tests/test_data/test.stdf -v
-        tests -i tests/test_data/test.stdf [-v?]
+        records -i tests/test_data/test.stdf -v 
+        parts -i tests/test_data/test.stdf
+        yield -i tests/test_data/test.stdf 
+        tests -i tests/test_data/test.stdf -v
         sites -i tests/test_data/test.stdf
         heads -i tests/test_data/test.stdf
-
-    strip -i tests/test_data/test.stdf --atr --dtr --gdr --pcr --sbr --hbr 
-
-    repair -i tests/test_data/test.stdf
-
-    concat 
+        sbin -i tests/test_data/test.stdf -v
+        hbin -i tests/test_data/test.stdf -v
 
     dump
         records -i tests/test_data/test.stdf -r FAR MIR ...
         info -i tests/test_data/test.stdf --> mir & sdr
-
     to 
         csv -i tests/test_data/test.stdf (-o ...) -p
         xlsx -i tests/test_data/test.stdf (-o ...) -p
@@ -41,6 +39,12 @@ stdf
         le -i tests/test_data/test.stdf (-o ...) -p
         npy -i tests/test_data/test.stdf (-o ...) -p
         hdf5 -i tests/test_data/test.stdf (-o ...) -p
+
+    strip -i tests/test_data/test.stdf (-o ...) --atr --dtr --gdr --pcr --sbr --hbr --id
+
+    repair -i tests/test_data/test.stdf (-o -p) 
+
+    concat -i file1.stdf file2.stdf -o concat.stdf -p
 
     deflate -i tests/test_data/test.stdf --gzip -p
                                          --lzma -p

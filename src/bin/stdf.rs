@@ -1,10 +1,10 @@
 extern crate clap;
 
-use clap::{Arg, Command, crate_version, crate_authors, ArgAction};
-use stdf::records::V4;
+use clap::{Arg, Command, crate_version, crate_authors, ArgAction, value_parser};
+use stdf::records::{PRR, V4};
 use std::fs::File;
 use std::process;
-use stdf::{get_endian_from_file, get_index_from_file};
+use stdf::{get_endian_from_file, get_index_from_file, records::typ_sub_to_name};
 use memmap::MmapOptions;
 use byte::BytesExt;
 
@@ -12,51 +12,137 @@ fn main() {
     let matches = Command::new("stdf")
         .version(crate_version!())
         .author(crate_authors!("\n"))
-        .about("Standard Test Data Format (STDF) data processing")
-        .subcommand(
-            Command::new("endian")
-                .about("Determines the endian of the given STDF file.")
-                .arg(
-                    Arg::new("input_file")
-                        .short('i')
-                        .long("input_file")
-                        .required(true)
-                        .help("Sets the input file to use"),
-                ),
+        .about("Standard Test Data Format (STDF) data processing.")
+        .subcommand(Command::new("endian")
+            .about("Determines the endian of the given STDF file.")
+            .arg(Arg::new("input_file")
+                .short('i')
+                .long("input_file")
+                .required(true)
+                .help("Sets the input file to use"),
+            ),
         )
-        .subcommand(
-            Command::new("records")
-                .about("Lists the records in the STDF file."),
-        )
-        .subcommand(
-            Command::new("dump")
-                .about("Dumps the STDF file in a more readable form to the console.")
-                .arg(
-                    Arg::new("input_file")
-                        .short('i')
-                        .long("input_file")
-                        .required(true)
-                        .help("Sets the input file to use"),
-                )
-                .arg(
-                    Arg::new("records")
-                        .short('r')
-                        .long("records")
-                        .required(false)
-                        .help("Sets the list of records to dump. (see `stdf records` for a valid list of records)`"),
-                ),
-        )
-        .subcommand(Command::new("count")
-            .about("Counts various thing in the STDF file")
+        .subcommand(Command::new("list")
+            .about("List various capabilities.")
+            .alias("show")
             .subcommand(Command::new("records")
-                .about("Counts the records in the STDF file")
+                .about("Lists the supported record names."),
+            )
+            .subcommand(Command::new("types")
+                .about("Lists the supported types."),
+            )
+        )
+        .subcommand(Command::new("create")
+            .about("Creates (duplicates) the input file to the output file, but waits some time between the writing of the records.")
+            .alias("dupicate")
+            .arg(Arg::new("input_file")
+                .short('i')
+                .long("input")
+                .required(true)
+                .help("Sets the input file to use"),
+            )
+            .arg(Arg::new("output_file")
+                .short('o')
+                .long("output")
+                .required(true)
+                .help("Sets the output file to use"),
+            )
+            .arg(Arg::new("ms")
+                .short('t')
+                .long("time")
+                .required(false)
+                .default_value("100")
+                .value_parser(value_parser!(u64).range(0..=10000))
+                .help("Sets the time in ms to wait between writing records"),
+            )
+            .arg(Arg::new("progress_bar")
+                .short('p')
+                .long("progress")
+                .required(false)
+                .action(ArgAction::SetTrue)
+                .help("Displays a status bar while processing"),
+            ),
+        )
+        .subcommand(Command::new("is")
+            .about("Checks various things on the STDF file.")
+            .subcommand(Command::new("ws")
+                .about("Checks if the STDF file comes from Wafer Sort.")
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
                     .required(true)
                     .help("Sets the input file to use"),
                 )
-                .arg(Arg::new("verbosity")
+            )
+            .subcommand(Command::new("ft")
+                .about("Checks if the STDF file comes from Final Test.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+            .subcommand(Command::new("be")
+                .about("Checks if the STDF file is in Big Endian format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+            .subcommand(Command::new("le")
+                .about("Checks if the STDF file is in Little Endian format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+            .subcommand(Command::new("clean")
+                .about("Checks if the STDF file is clean (ends on an MRR).")
+                .alias("finished")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+            .subcommand(Command::new("retest")
+                .about("Checks if the STDF file holds retest data.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+            .subcommand(Command::new("concatenable")
+                .about("Checks if the STDF files are concatenable.")
+                .alias("concat")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .num_args(2)
+                    .help("Sets the input files to use"),
+                )
+            )
+        )
+        .subcommand(Command::new("count")
+            .about("Counts various thing in the STDF file.")
+            .subcommand(Command::new("records")
+                .about("Counts the records in the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("verbose")
                     .short('v')
                     .long("verbose")
                     .required(false)
@@ -68,18 +154,27 @@ fn main() {
                     .long("records")
                     .required(false)
                     .num_args(1..)
-                    .help("Limits the records to count to the given ones"),
+                    .help("Limits the records to counted to the given ones"),
                 ),
             )
             .subcommand(Command::new("parts")
-                .about("Counts the parts in the STDF file")
+                .about("Counts the parts in the STDF file.")
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
                     .required(true)
                     .help("Sets the input file to use"),
                 )
-                .arg(Arg::new("verbosity")
+            )
+            .subcommand(Command::new("yield")
+                .about("Calculates the yield the parts of the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("verbose")
                     .short('v')
                     .long("verbose")
                     .required(false)
@@ -88,7 +183,7 @@ fn main() {
                 )
             )
             .subcommand(Command::new("tests")
-                .about("Counts the number of unique tests in the STDF file")
+                .about("Counts the number of unique tests in the STDF file.")
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
@@ -103,8 +198,8 @@ fn main() {
                     .help("Sets the verbosity to high"),
                 )
             )
-                .subcommand(Command::new("sites")
-                .about("Counts the number of sites in the STDF file")
+            .subcommand(Command::new("sites")
+                .about("Counts the number of sites in the STDF file.")
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
@@ -112,71 +207,177 @@ fn main() {
                     .help("Sets the input file to use"),
                 )
             )
-                .subcommand(Command::new("heads")
-                .about("Counts the number of heads in the STDF file")
+            .subcommand(Command::new("heads")
+                .about("Counts the number of heads in the STDF file.")
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
                     .required(true)
                     .help("Sets the input file to use"),
                 )
-            ), 
-         )
-        .subcommand(
-            Command::new("to")
-                .about("Converts the input file to another format")
-                .subcommand(
-                    Command::new("csv")
-                        .about("Converts the input file to CSV format")
-                        .arg(
-                            Arg::new("input_file")
-                                .short('i')
-                                .long("input_file")
-                                .required(true)
-                                .help("Sets the input file to use"),
-                        )
-                        .arg(
-                            Arg::new("output_file")
-                                .short('o')
-                                .long("output_file")
-                                .required(false)
-                                .help("Sets the output file to use"),
-                        )
-                        .arg(
-                            Arg::new("progress_bar")
-                                .short('p')
-                                .long("progress_bar")
-                                .required(false)
-                                .action(ArgAction::SetTrue)
-                                .help("Displays a status bar while processing"),
-                        ),
+            )
+        ) 
+        .subcommand(Command::new("dump")
+            .about("Dumps various things of the STDF file in a more readable form to the console.")
+            .subcommand(Command::new("records")
+                .about("Dumps the records of the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
                 )
-                .subcommand(
-                    Command::new("xlsx")
-                        .about("Converts the input file to XLSX format")
-                        .arg(
-                            Arg::new("input_file")
-                                .short('i')
-                                .long("input_file")
-                                .required(true)
-                                .help("Sets the input file to use"),
-                        )
-                        .arg(
-                            Arg::new("output_file")
-                                .short('o')
-                                .long("output_file")
-                                .required(false)
-                                .help("Sets the output file to use"),
-                        )
-                        .arg(
-                            Arg::new("progress_bar")
-                                .short('p')
-                                .long("progress_bar")
-                                .required(false)
-                                .action(ArgAction::SetTrue)
-                                .help("Displays a status bar while processing"),
-                        ),
+                .arg(Arg::new("records")
+                    .short('r')
+                    .long("records")
+                    .required(false)
+                    .help("Sets the list of records to dump. (see `stdf records` for a valid list of records)`"),
                 ),
+            )
+            .subcommand(Command::new("parts")
+                .about("Dumps the parts of the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+        )
+        .subcommand(Command::new("to")
+            .about("Converts the STDF file into another format.")
+            .subcommand(Command::new("csv")
+                .about("Converts the STDF file to CSV format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("output_file")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .help("Sets the output file to use"),
+                )
+                .arg(Arg::new("progress_bar")
+                    .short('p')
+                    .long("progress_bar")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Displays a status bar while processing"),
+                ),
+            )
+            .subcommand(Command::new("xlsx")
+                .about("Converts the STDF file to XLSX format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("output_file")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .help("Sets the output file to use"),
+                )
+                .arg(Arg::new("progress_bar")
+                    .short('p')
+                    .long("progress")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Displays a status bar while processing"),
+                ),
+            )
+            .subcommand(Command::new("be")
+                .about("Converts the STDF file to Big Endian format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("output_file")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .help("Sets the output file to use"),
+                )
+                .arg(Arg::new("progress_bar")
+                    .short('p')
+                    .long("progress")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Displays a status bar while processing"),
+                ),
+            )
+            .subcommand(Command::new("le")
+                .about("Converts the STDF file to Little Endian format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("output_file")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .help("Sets the output file to use"),
+                )
+                .arg(Arg::new("progress_bar")
+                    .short('p')
+                    .long("progress")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Displays a status bar while processing"),
+                ),
+            )
+            .subcommand(Command::new("npy")
+                .about("Converts the STDF file to Numpy format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("output_file")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .help("Sets the output file to use"),
+                )
+                .arg(Arg::new("progress_bar")
+                    .short('p')
+                    .long("progress")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Displays a status bar while processing"),
+                ),
+            )
+            .subcommand(Command::new("hdf5")
+                .about("Converts the STDF file to HDF5 format.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("output_file")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .help("Sets the output file to use"),
+                )
+                .arg(Arg::new("progress_bar")
+                    .short('p')
+                    .long("progress")
+                    .required(false)
+                    .action(ArgAction::SetTrue)
+                    .help("Displays a status bar while processing"),
+                ),
+            ),
         )
         .get_matches();
 
@@ -223,11 +424,11 @@ fn main() {
                     }
                 },
                 Ok(None) => {
-                    println!("Error: NO STDF file!");
+                    eprintln!("Error: NO STDF file!");
                     process::exit(1);
                 },
                 Err(e) => {
-                    println!("Error: {}", e);
+                    eprintln!("Error: {}", e);
                     process::exit(1);
                 }
             }
@@ -255,7 +456,7 @@ fn main() {
                     Ok(v4) => println!("{:?}", v4),
                     // Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
                     // Err(e) => println!("Error : {:?}", e),
-                    _ => {}
+                    _ => break,
                 };
             }
         }
@@ -265,16 +466,77 @@ fn main() {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
                     let mut file = File::open(input_file).unwrap();
                     let index = get_index_from_file(&mut file).unwrap();
+                    
+                    let mut record_count: u64 = 0;
                     for (key, value) in index.iter() {
-                        println!("({}, {}) : {}", key.0, key.1, value.len());
+                        if typ_sub_to_name(key.0, key.1) != "???" {
+                            if sub_sub_m.get_flag("verbose") {
+                                println!("{} : {:>10}", typ_sub_to_name(key.0, key.1), value.len());
+                            }
+                            record_count += value.len() as u64;
+                        } else {
+                            if sub_sub_m.get_flag("verbose") {
+                                println!("{} : ({:>10})", typ_sub_to_name(key.0, key.1), value.len());
+                            }
+                        }
                     }
-                
-
-
-                    // println!("{:?}", index);
+                    if sub_sub_m.get_flag("verbose") {
+                        println!("    + -----------");
+                        println!("TTL : {:>10}", record_count);
+                    } else {
+                        println!("{}", record_count);
+                    }
                 }
                 Some(("parts", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let index = get_index_from_file(&mut file).unwrap();
+
+                    let mut part_count: u64 = 0;
+                    for (key, value) in index.iter() {
+                        if (key.0, key.1) == (5, 20) { // PRR
+                            part_count += value.len() as u64;
+                        }
+                    }
+                    println!("{}", part_count);
+                }
+                Some(("yield", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap().unwrap();
+                    let index = get_index_from_file(&mut file).unwrap();
+                    
+                    let m = unsafe { MmapOptions::new().map(&file).unwrap() };
+                    let bytes = &m[..];
+
+                    let offset = &mut 0;
+
+                    let mut pass_count: u64 = 0;
+                    let mut fail_count: u64 = 0;
+                    for (key, value) in index.iter() {
+                        if (key.0, key.1) == (5, 20) { // PRR
+                            for pos in value.iter() {
+                                *offset = *pos as usize;
+                                match bytes.read_with::<PRR>(offset, endian) {
+                                    Ok(prr) =>{
+                                        if prr.part_flg.0 & 0b00011000 == 0 {
+                                            pass_count += 1;
+                                        } else {
+                                            fail_count += 1;
+                                        }
+                                    },
+                                    _ => break,
+                                };
+                            }
+                        }
+                    }
+                    let yeild = (pass_count as f64 / (pass_count + fail_count) as f64) * 100.0;
+                    let total = pass_count + fail_count;
+                    if sub_sub_m.get_flag("verbose") {
+                        println!("{}/{}={:.2}%", pass_count, total, yeild);
+                    } else {
+                        println!("{:.2}%", yeild);
+                    }
                 }
                 Some(("tests", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
