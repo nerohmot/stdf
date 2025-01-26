@@ -167,7 +167,7 @@ fn main() {
                 )
             )
             .subcommand(Command::new("yield")
-                .about("Calculates the yield the parts of the STDF file.")
+                .about("Calculates the yield in the parts of the STDF file.")
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
@@ -382,33 +382,6 @@ fn main() {
         .get_matches();
 
     match matches.subcommand() {
-        Some(("records", sub_m)) => {
-            println!("FAR : File Attributes Record");
-            println!("ATR : Audit Trail Record");
-            println!("MIR : Master Information Record");
-            println!("MRR : Master Results Record");
-            println!("PCR : Part Count Record");
-            println!("HBR : Hardware Bin Record");
-            println!("SBR : Software Bin Record");
-            println!("PMR : Pin Map Record");
-            println!("PGR : Pin Group Record");
-            println!("PLR : Pin List Record");
-            println!("RDR : Retest Data Record");
-            println!("SDR : Site Description Record");
-            println!("WIR : Wafer Information Record");
-            println!("WRR : Wafer Results Record");
-            println!("WCR : Wafer Configuration Record");
-            println!("PIR : Part Information Record");
-            println!("PRR : Part Results Record");
-            println!("TSR : Test Synopsis Record");
-            println!("PTR : Parametric Test Record");
-            println!("MPR : Multiple-Result Parametric Record");
-            println!("FTR : Functional Test Record");
-            println!("BPS : Begin Program Section Record");
-            println!("EPS : End Program Section Record");
-            println!("GDR : Generic Data Record");
-            println!("DTR : Data Record");
-        }
         Some(("endian", sub_m)) => {
             let input_file = sub_m.get_one::<String>("input_file").unwrap();
             let file = File::open(input_file);
@@ -433,6 +406,42 @@ fn main() {
                 }
             }
         }
+        Some(("list", sub_m)) => {
+            match sub_m.subcommand()    {
+                Some(("records", _)) => {
+                    println!("FAR : File Attributes Record");
+                    println!("ATR : Audit Trail Record");
+                    println!("MIR : Master Information Record");
+                    println!("MRR : Master Results Record");
+                    println!("PCR : Part Count Record");
+                    println!("HBR : Hardware Bin Record");
+                    println!("SBR : Software Bin Record");
+                    println!("PMR : Pin Map Record");
+                    println!("PGR : Pin Group Record");
+                    println!("PLR : Pin List Record");
+                    println!("RDR : Retest Data Record");
+                    println!("SDR : Site Description Record");
+                    println!("WIR : Wafer Information Record");
+                    println!("WRR : Wafer Results Record");
+                    println!("WCR : Wafer Configuration Record");
+                    println!("PIR : Part Information Record");
+                    println!("PRR : Part Results Record");
+                    println!("TSR : Test Synopsis Record");
+                    println!("PTR : Parametric Test Record");
+                    println!("MPR : Multiple-Result Parametric Record");
+                    println!("FTR : Functional Test Record");
+                    println!("BPS : Begin Program Section Record");
+                    println!("EPS : End Program Section Record");
+                    println!("GDR : Generic Data Record");
+                    println!("DTR : Data Record");
+                }
+                Some(("types", _)) => {
+                    println!("types ...");
+                }
+                _ => eprintln!("No valid subcommand was used for list"),
+            }
+        }
+
         Some(("dump", sub_m)) => {
             let input_file_name = sub_m.get_one::<String>("input_file").unwrap();
             let mut input_file = File::open(input_file_name).unwrap();
@@ -539,13 +548,28 @@ fn main() {
                     }
                 }
                 Some(("tests", sub_sub_m)) => {
-                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let endian = get_endian_from_file(&mut input_file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
                 }
                 Some(("sites", sub_sub_m)) => {
-                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let endian = get_endian_from_file(&mut input_file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
                 }
                 Some(("heads", sub_sub_m)) => {
-                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let endian = get_endian_from_file(&mut input_file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
                 }
                 _ => eprintln!("No valid subcommand was used for convert_to"),
             }

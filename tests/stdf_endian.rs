@@ -17,6 +17,4 @@ fn test_endian_le() {
     assert!(stdout.contains("LE"));
 }
 
-fn test_endian_be() {
-    
-}
+//TODO: Add test for BE

@@ -13,6 +13,10 @@ use byte::ctx::Endian;
 
 // TODO: Document this function
 pub fn has_mmr_at_end(file: &mut File) -> Result<bool> {
+    let endian = get_endian_from_file(file)?;
+    if endian.is_none() {
+        panic!("Endianess not detected");
+    } 
     // TODO: Implement this function
     // try to also return the number of trailing bytes ...
     Ok(true)
