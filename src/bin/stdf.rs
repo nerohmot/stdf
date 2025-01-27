@@ -1,7 +1,7 @@
 extern crate clap;
 
 use clap::{Arg, Command, crate_version, crate_authors, ArgAction, value_parser};
-use stdf::records::{PRR, V4};
+use stdf::{has_mrr_at_end, records::{PRR, V4}};
 use std::fs::File;
 use std::process;
 use stdf::{get_endian_from_file, get_index_from_file, records::typ_sub_to_name};
@@ -441,32 +441,66 @@ fn main() {
                 _ => eprintln!("No valid subcommand was used for list"),
             }
         }
-
-        Some(("dump", sub_m)) => {
-            let input_file_name = sub_m.get_one::<String>("input_file").unwrap();
-            let mut input_file = File::open(input_file_name).unwrap();
-            let endian = match get_endian_from_file(&mut input_file) {
-                Ok(Some(endian)) => endian,
-                Ok(None) => {
-                    println!("Error: NO STDF file!");
-                    process::exit(1);
-                },
-                Err(e) => {
-                    println!("Error: {}", e);
-                    process::exit(1);
+        Some(("is", sub_m)) => {
+            match sub_m.subcommand() {
+                Some(("ws", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
                 }
-            };
+                Some(("ft", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
+                }
+                Some(("be", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
+                }
+                Some(("le", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
+                }
+                Some(("clean", sub_sub_m)) => {
+                    let file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(file_name);
+                    let retval = has_mrr_at_end(file).unwrap();
 
-            let m = unsafe { MmapOptions::new().map(&input_file).unwrap() };
-            let bytes = &m[..];
-            let offset = &mut 0;
-            loop {
-                match bytes.read_with::<V4>(offset, endian) {
-                    Ok(v4) => println!("{:?}", v4),
-                    // Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
-                    // Err(e) => println!("Error : {:?}", e),
-                    _ => break,
-                };
+
+
+
+                }
+                Some(("retest", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
+                }
+                Some(("concatenable", sub_sub_m)) => {
+                    let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(input_file).unwrap();
+                    let endian = get_endian_from_file(&mut file).unwrap();
+                    if endian.is_none() {
+                        panic!("Endianess not detected");
+                    }
+                }
+                _ => eprintln!("No valid subcommand was used for is"),
             }
         }
         Some(("count", sub_m)) => {
@@ -572,6 +606,53 @@ fn main() {
                     }
                 }
                 _ => eprintln!("No valid subcommand was used for convert_to"),
+            }
+        }
+        Some(("dump", sub_m)) => {
+            match sub_m.subcommand() {
+                Some(("records", sub_sub_m)) => {
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let endian = match get_endian_from_file(&mut input_file) {
+                        Ok(Some(endian)) => endian,
+                        Ok(None) => {
+                            println!("Error: NO STDF file!");
+                            process::exit(1);
+                        },
+                        Err(e) => {
+                            println!("Error: {}", e);
+                            process::exit(1);
+                        }
+                    };
+                    let m = unsafe { MmapOptions::new().map(&input_file).unwrap() };
+                    let bytes = &m[..];
+                    let offset = &mut 0;
+                    loop {
+                        match bytes.read_with::<V4>(offset, endian) {
+                            Ok(v4) => println!("{:?}", v4),
+                            // Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
+                            // Err(e) => println!("Error : {:?}", e),
+                            _ => break,
+                        };
+                    }
+                }
+                Some(("parts", sub_sub_m)) => {
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let endian = match get_endian_from_file(&mut input_file) {
+                        Ok(Some(endian)) => endian,
+                        Ok(None) => {
+                            println!("Error: NO STDF file!");
+                            process::exit(1);
+                        },
+                        Err(e) => {
+                            println!("Error: {}", e);
+                            process::exit(1);
+                        }
+                    };
+                    println!("TO BE IMPLEMENTED {:?}", endian);
+                }
+                _ => eprintln!("No valid subcommand was used for convert_to"),	
             }
         }
         Some(("to", sub_m)) => {

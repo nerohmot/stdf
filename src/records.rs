@@ -496,7 +496,7 @@ pub struct WIR<'a> {
 
 impl <'a> fmt::Display for WIR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WIR\n")?;
+        write!(f, "WIR : Wafer Information Record\n")?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_GRP : {}\n", self.site_grp)?;
         write!(f, "   START_T  : {}\n", self.start_t)?;
@@ -535,7 +535,7 @@ pub struct WRR<'a> {
 
 impl <'a> fmt::Display for WRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WRR\n")?;
+        write!(f, "WRR : Wafer Result Record\n")?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_GRP : {}\n", self.site_grp)?;
         write!(f, "   FINISH_T : {}\n", self.finish_t)?;
@@ -577,7 +577,7 @@ pub struct WCR {
 
 impl fmt::Display for WCR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WCR\n")?;
+        write!(f, "WCR : Wafer Configuration Record\n")?;
         write!(f, "   WAFR_SIZ : {}\n", self.wafr_siz)?;
         write!(f, "   DIE_HT   : {}\n", self.die_ht)?;
         write!(f, "   DIE_WID  : {}\n", self.die_wid)?;
@@ -598,7 +598,7 @@ pub struct PIR {
 
 impl fmt::Display for PIR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PIR\n")?;
+        write!(f, "PIR : Part Information Record\n")?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM : {}\n", self.site_num)
     }
@@ -629,7 +629,7 @@ pub struct PRR<'a> {
 
 impl <'a> fmt::Display for PRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PRR\n")?;
+        write!(f, "PRR : Part Results Record\n")?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM : {}\n", self.site_num)?;
         write!(f, "   PART_FLG : {}\n", self.part_flg)?;
@@ -676,7 +676,7 @@ pub struct TSR<'a> {
 
 impl <'a> fmt::Display for TSR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TSR\n")?;
+        write!(f, "TSR : Test Synopsis Record\n")?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM : {}\n", self.site_num)?;
         write!(f, "   TEST_TYP : {}\n", self.test_typ)?;
@@ -737,7 +737,7 @@ pub struct PTR<'a> {
 
 impl <'a> fmt::Display for PTR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PTR\n")?;
+        write!(f, "PTR : Parametric Test Record\n")?;
         write!(f, "   TEST_NUM : {}\n", self.test_num)?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM : {}\n", self.site_num)?;
@@ -819,7 +819,7 @@ pub struct MPR<'a> {
 
 impl <'a> fmt::Display for MPR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "MPR\n")?;
+        write!(f, "MPR : Multiple-Result Parametric Record\n")?;
         write!(f, "   TEST_NUM : {}\n", self.test_num)?;
         write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM : {}\n", self.site_num)?;
@@ -831,7 +831,7 @@ impl <'a> fmt::Display for MPR<'a> {
         write!(f, "   RTN_RSLT : {:?}\n", self.rtn_rslt)?;
         write!(f, "   TEST_TXT : {}\n", self.test_txt)?;
         write!(f, "   ALARM_ID : {}\n", self.alarm_id)
-        
+        // TODO: see how to implement the optional fields
         // write!(f, "   OPT_FLAG : {}\n", self.opt_flag)?;
         // write!(f, "   RES_SCAL : {}\n", self.res_scal)?;
         // write!(f, "   LLM_SCAL : {}\n", self.llm_scal)?;
