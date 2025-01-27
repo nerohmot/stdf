@@ -1,20 +1,30 @@
 extern crate clap;
 
 use clap::{Arg, Command, crate_version, crate_authors, ArgAction, value_parser};
-use stdf::{has_mrr_at_end, records::{PRR, V4}};
-use std::fs::File;
+use stdf::records::{MRR, PRR, FAR, V4, typ_sub_to_name};
+use std::{fs::File, io::{Seek, SeekFrom}};
 use std::process;
-use stdf::{get_endian_from_file, get_index_from_file, records::typ_sub_to_name};
+use stdf::{get_endian_from_file, get_index_from_file, mrr_offset_in_file};
 use memmap::MmapOptions;
 use byte::BytesExt;
 
 fn main() {
+    println!("Hello, world!");
     let matches = Command::new("stdf")
         .version(crate_version!())
         .author(crate_authors!("\n"))
         .about("Standard Test Data Format (STDF) data processing.")
         .subcommand(Command::new("endian")
             .about("Determines the endian of the given STDF file.")
+            .arg(Arg::new("input_file")
+                .short('i')
+                .long("input_file")
+                .required(true)
+                .help("Sets the input file to use"),
+            ),
+        )
+        .subcommand(Command::new("play")
+            .about("Play with the STDF file.")
             .arg(Arg::new("input_file")
                 .short('i')
                 .long("input_file")
@@ -219,6 +229,21 @@ fn main() {
         ) 
         .subcommand(Command::new("dump")
             .about("Dumps various things of the STDF file in a more readable form to the console.")
+            .subcommand(Command::new("record")
+                .about("Dumps the record at a postion of the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("offset")
+                    .long("offset")
+                    .value_parser(clap::value_parser!(u64))
+                    .required(true)
+                    .help("Sets the offset in the STDF of the record to dump"),
+                ),
+            )
             .subcommand(Command::new("records")
                 .about("Dumps the records of the STDF file.")
                 .arg(Arg::new("input_file")
@@ -239,6 +264,15 @@ fn main() {
                 .arg(Arg::new("input_file")
                     .short('i')
                     .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+            )
+            .subcommand(Command::new("length")
+                .about("Dumps the length of the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input")
                     .required(true)
                     .help("Sets the input file to use"),
                 )
@@ -406,6 +440,17 @@ fn main() {
                 }
             }
         }
+        Some(("play", sub_m)) => {
+            let input_file_name = sub_m.get_one::<String>("input_file").unwrap();
+            let mut file = match File::open(input_file_name){
+                Ok(file) => file,
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    process::exit(1);
+                }
+            };
+            println!("mrr_offset_in_file = {}", mrr_offset_in_file(&mut file).unwrap());
+        }
         Some(("list", sub_m)) => {
             match sub_m.subcommand()    {
                 Some(("records", _)) => {
@@ -477,12 +522,28 @@ fn main() {
                 }
                 Some(("clean", sub_sub_m)) => {
                     let file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
-                    let mut file = File::open(file_name);
-                    let retval = has_mrr_at_end(file).unwrap();
-
-
-
-
+                    let mut file = match File::open(file_name) {
+                        Ok(file) => file,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            process::exit(1);
+                        }
+                    };
+                    let retval = true;
+                    //TODO: implement has_mrr_at_end
+                    // let retval = match has_mrr_at_end(&mut file){
+                    //     Ok(retval) => retval,
+                    //     Err(e) => {
+                    //         eprintln!("Error: {}", e);
+                    //         process::exit(1);
+                    //     }
+                    // };
+                    if retval {
+                        println!("OK");
+                    } else {
+                        println!("NO MRR");
+                        process::exit(1);
+                    }
                 }
                 Some(("retest", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
@@ -512,15 +573,29 @@ fn main() {
                     
                     let mut record_count: u64 = 0;
                     for (key, value) in index.iter() {
-                        if typ_sub_to_name(key.0, key.1) != "???" {
-                            if sub_sub_m.get_flag("verbose") {
-                                println!("{} : {:>10}", typ_sub_to_name(key.0, key.1), value.len());
-                            }
-                            record_count += value.len() as u64;
-                        } else {
-                            if sub_sub_m.get_flag("verbose") {
-                                println!("{} : ({:>10})", typ_sub_to_name(key.0, key.1), value.len());
-                            }
+                        match typ_sub_to_name(key.0, key.1) {
+                            "MRR" => {
+                                if sub_sub_m.get_flag("verbose") {
+
+
+
+
+                                    println!("{} : {:>10} -> {:?}", typ_sub_to_name(key.0, key.1), value.len(), value);
+                                }
+                                record_count += value.len() as u64;
+
+                            },
+                            "???" => {
+                                if sub_sub_m.get_flag("verbose") {
+                                    println!("{} : ({:>9})", typ_sub_to_name(key.0, key.1), value.len());
+                                }
+                            },
+                            _ => {
+                                if sub_sub_m.get_flag("verbose") {
+                                    println!("{} : {:>10}", typ_sub_to_name(key.0, key.1), value.len());
+                                }
+                                record_count += value.len() as u64;
+                            },
                         }
                     }
                     if sub_sub_m.get_flag("verbose") {
@@ -610,6 +685,31 @@ fn main() {
         }
         Some(("dump", sub_m)) => {
             match sub_m.subcommand() {
+                Some(("record", sub_sub_m)) => {
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let endian = match get_endian_from_file(&mut input_file) {
+                        Ok(Some(endian)) => endian,
+                        Ok(None) => {
+                            println!("Error: NO STDF file!");
+                            process::exit(1);
+                        },
+                        Err(e) => {
+                            println!("Error: {}", e);
+                            process::exit(1);
+                        }
+                    };
+                    let current_position = input_file.seek(SeekFrom::Current(0)).unwrap();
+                    let m = unsafe { MmapOptions::new().map(&input_file).unwrap() };
+                    let bytes = &m[..];
+                    let offset_u64 = sub_sub_m.get_one::<u64>("offset").unwrap();
+                    let mut offset = *offset_u64 as usize;
+                    match bytes.read_with::<V4>(&mut offset, endian) {
+                        Ok(v4) => println!("{:?}", v4),
+                        _ => println!("Error: Bad offset"),
+                    };
+                    input_file.seek(SeekFrom::Start(current_position)).unwrap();
+                }
                 Some(("records", sub_sub_m)) => {
                     let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
                     let mut input_file = File::open(input_file_name).unwrap();
@@ -629,9 +729,38 @@ fn main() {
                     let offset = &mut 0;
                     loop {
                         match bytes.read_with::<V4>(offset, endian) {
-                            Ok(v4) => println!("{:?}", v4),
-                            // Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
-                            // Err(e) => println!("Error : {:?}", e),
+                            Ok(v4) => {
+                                match v4 {
+                                    V4::FAR(record) => println!("{}", record),
+                                    V4::ATR(record) => println!("{}", record),
+                                    V4::MIR(record) => println!("{}", record),
+                                    V4::MRR(record) => println!("{}", record),
+                                    V4::PCR(record) => println!("{}", record),
+                                    V4::HBR(record) => println!("{}", record),
+                                    V4::SBR(record) => println!("{}", record),
+                                    V4::PMR(record) => println!("{}", record),
+                                    V4::PGR(record) => println!("{}", record),
+                                    V4::PLR(record) => println!("{}", record),
+                                    V4::RDR(record) => println!("{}", record),
+                                    V4::SDR(record) => println!("{}", record),
+                                    V4::WIR(record) => println!("{}", record),
+                                    V4::WRR(record) => println!("{}", record),
+                                    V4::WCR(record) => println!("{}", record),
+                                    V4::PIR(record) => println!("{}", record),
+                                    V4::PRR(record) => println!("{}", record),
+                                    V4::TSR(record) => println!("{}", record),
+                                    V4::PTR(record) => println!("{}", record),
+                                    V4::MPR(record) => println!("{}", record),
+                                    V4::FTR(record) => println!("{:?}", record),
+                                    V4::BPS(record) => println!("{}", record),
+                                    V4::EPS(record) => println!("{}", record),
+                                    V4::GDR(record) => println!("{}", record),
+                                    V4::DTR(record) => println!("{}", record),
+                                    _ => println!("???"),
+                                }
+                            },
+                            Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
+                            Err(e) => println!("Error : {:?}", e),
                             _ => break,
                         };
                     }
@@ -651,6 +780,18 @@ fn main() {
                         }
                     };
                     println!("TO BE IMPLEMENTED {:?}", endian);
+                }
+                Some(("length", sub_sub_m)) => {
+                    let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut input_file = File::open(input_file_name).unwrap();
+                    let file_length = match input_file.seek(SeekFrom::End(0)) {
+                        Ok(file_length) => file_length,
+                        Err(e) => {
+                            println!("Error: {}", e);
+                            process::exit(1);
+                        }
+                    };
+                    println!("{}", file_length);
                 }
                 _ => eprintln!("No valid subcommand was used for convert_to"),	
             }

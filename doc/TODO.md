@@ -30,8 +30,11 @@ stdf
         hbin -i tests/test_data/test.stdf -v
 
     dump
+        record -i tests/test_data/test.stdf --offset 12345
         records -i tests/test_data/test.stdf -r FAR MIR ...
         info -i tests/test_data/test.stdf --> mir & sdr
+        length -i tests/test_data/test.stdf --> returns the length of the file
+
     to 
         csv -i tests/test_data/test.stdf (-o ...) -p
         xlsx -i tests/test_data/test.stdf (-o ...) -p

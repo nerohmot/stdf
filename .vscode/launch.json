@@ -76,7 +76,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["endian", "-i", "tests/test_data/far.std"],
+            "args": ["is clean", "-i", "tests/test_data/far.std"],
             "cwd": "${workspaceFolder}"
         },
         {

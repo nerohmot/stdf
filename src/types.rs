@@ -193,8 +193,8 @@ impl fmt::Display for U4 {
 impl fmt::Display for U4E {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let datetime  = DateTime::from_timestamp(self.0 as i64, 0).unwrap();
-        let formatted_datetime = datetime.format("%A %B %d %Y @ %H:%M:%S").to_string();
-        write!(f, "{}", formatted_datetime)
+        let formatted_datetime = datetime.format("%A, %B %d, %Y @ %H:%M:%S").to_string();
+        write!(f, "{} ({})", formatted_datetime, self.0)
     }
 }
 

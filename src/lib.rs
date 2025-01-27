@@ -11,74 +11,44 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Result};
 use byte::ctx::Endian;
 
-/// Checks if the STDF file has an MRR (Master Results Record) at the end.
-///
-/// This function reads through the STDF file to determine if it ends with an MRR.
-/// It handles both little-endian and big-endian formats based on the file's content.
-///
-/// # Arguments
-///
-/// * `file` - A mutable reference to an open file handle.
-///
-/// # Returns
-///
-/// * `Ok(true)` if the file ends with an MRR.
-/// * `Ok(false)` if the file does not end with an MRR or if the endianness could not be determined.
-/// * `Err` if an I/O error occurs.
-///
-/// # Errors
-///
-/// This function will return an error if any I/O operation fails.
-///
-/// # Examples
-///
-/// ```
-/// use std::fs::File;
-/// use std::io::Result;
-/// use stdf::has_mrr_at_end;
-///
-/// fn main() -> Result<()> {
-///     let mut file = File::open("tests/test_data/test.stdf")?;
-///     let has_mrr = has_mrr_at_end(&mut file)?;
-///     println!("Has MRR at end: {}", has_mrr);
-///     Ok(())
-/// }
-/// ```
-pub fn has_mrr_at_end(file: &mut File) -> Result<bool> {
-    let endian = match get_endian_from_file(file)? {
+
+pub fn mrr_offset_in_file(file: &mut File) -> Option<u64> {
+    let endian = match get_endian_from_file(file).unwrap() {
         Some(endian) => endian,
-        None => return Ok(false),
+        None => panic!("Endianess not detected"),
     };
-    let saved_position = file.seek(SeekFrom::Current(0))?;
+    let saved_position = file.seek(SeekFrom::Current(0)).unwrap();
+    let file_length = file.seek(SeekFrom::End(0)).unwrap();
+    file.seek(SeekFrom::Start(0)).unwrap();
+
     let mut rec_len = [0_u8; 2];
     let mut rec_typ = [0_u8; 1];
     let mut rec_sub = [0_u8; 1];
     let mut pos:u64 = 0;
-    let mut retval = false;
-
-    loop{
-        let file_length = file.seek(SeekFrom::End(0))?; // file can grow while we process it
-        if file_length - pos < 4 { break; }    
-        file.read_exact(&mut rec_len)?;
-        file.read_exact(&mut rec_typ)?;
-        file.read_exact(&mut rec_sub)?;
+    
+    loop {
+        if file_length - pos < 4 { break; }
+        file.read_exact(&mut rec_len).unwrap();
+        file.read_exact(&mut rec_typ).unwrap();
+        file.read_exact(&mut rec_sub).unwrap();
         let rec_size = match endian {
             Endian::Little => u16::from_le_bytes(rec_len) as i64,
             Endian::Big => u16::from_be_bytes(rec_len) as i64,
         };
-        if file_length - pos < rec_size as u64 { break; }
+        if file_length - (pos+4) < rec_size as u64 { break; }
         match (rec_typ[0], rec_sub[0]) {
             (1, 20) => {
-                retval = true;
-                break;
+                file.seek(SeekFrom::Start(saved_position)).unwrap();
+                return Some(pos);
             },
-            _ => (),
+            _ => {
+                pos += 4 + rec_size as u64;
+            },
         }
-        pos += 4 + rec_size as u64;
-        file.seek(SeekFrom::Current(rec_size))?; // skip the record data
+        file.seek(SeekFrom::Current(rec_size)).unwrap(); // skip the record data
     }
-    file.seek(SeekFrom::Start(saved_position))?;
-    Ok(retval)
+    file.seek(SeekFrom::Start(saved_position)).unwrap();
+    None
 }
 
 /// Indexes the records in an STDF (Standard Test Data Format) file.
@@ -138,6 +108,7 @@ pub fn get_index_from_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec<u64>
     let mut pos:u64 = 0;
     
     loop {
+        // FIXME: What if the file grows while we process it?
         if file_length - pos < 4 { break; }
         file.read_exact(&mut rec_len)?;
         file.read_exact(&mut rec_typ)?;
@@ -154,6 +125,7 @@ pub fn get_index_from_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec<u64>
         } else {
             index.insert((rec_typ[0], rec_sub[0]), vec![pos.clone()]);
         }
+        //FIXME: do not continue after a MRR record is found
         pos += 4 + rec_size as u64;
         file.seek(SeekFrom::Current(rec_size))?; // skip the record data
     }

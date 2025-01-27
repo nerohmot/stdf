@@ -1,6 +1,7 @@
 #![allow(unused_parens)]
 use byte::ctx;
 use byte::{BytesExt, TryRead, TryWrite};
+use std::convert::Infallible;
 use std::fmt;
 
 use crate::types::*;
@@ -66,8 +67,8 @@ pub struct FAR {
 impl fmt::Display for FAR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "FAR : File Attrubute Record\n")?;
-        write!(f, "   CPU_TYPE : {}\n", self.cpu_type)?;
-        write!(f, "   STDF_VER : {}\n", self.stdf_ver)
+        write!(f, "   CPU_TYPE [U1] : {}\n", self.cpu_type)?;
+        write!(f, "   STDF_VER [U1] : {}\n", self.stdf_ver)
     }
 }
 
@@ -82,8 +83,8 @@ pub struct ATR<'a> {
 impl<'a> fmt::Display for ATR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ATR : Audit Trail Record\n")?;
-        write!(f, "   MOD_TIM : {}\n", self.mod_tim)?;
-        write!(f, "   CMD_LINE : {}\n", self.cmd_line)
+        write!(f, "   MOD_TIM [U4E]: {}\n", self.mod_tim)?;
+        write!(f, "   CMD_LINE [Cn]: '{}'\n", self.cmd_line)
     }
 }
 
@@ -170,50 +171,50 @@ pub struct MIR<'a> {
 impl<'a> fmt::Display for MIR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MIR : Master Information Record\n")?;
-        write!(f, "   SETUP_T  : {}\n", self.setup_t)?;
-        write!(f, "   START_T  : {}\n", self.start_t)?;
-        write!(f, "   STAT_NUM : {}\n", self.stat_num)?;
-        write!(f, "   MODE_COD : {}\n", self.mode_cod)?;
-        write!(f, "   RTST_COD : {}\n", self.rtst_cod)?;
-        write!(f, "   PROT_COD : {}\n", self.prot_cod)?;
-        write!(f, "   BURN_TIM : {}\n", self.burn_tim)?;
-        write!(f, "   CMOD_COD : {}\n", self.cmod_cod)?;
-        write!(f, "   LOT_ID   : {}\n", self.lot_id)?;
-        write!(f, "   PART_TYP : {}\n", self.part_typ)?;
-        write!(f, "   NODE_NAM : {}\n", self.node_nam)?;
-        write!(f, "   TSTR_TYP : {}\n", self.tstr_typ)?;
-        write!(f, "   JOB_NAM  : {}\n", self.job_nam)?;
-        write!(f, "   JOB_REV  : {}\n", self.job_rev)?;
-        write!(f, "   SBLOT_ID : {}\n", self.sblot_id)?;
-        write!(f, "   OPER_NAM : {}\n", self.oper_nam)?;
-        write!(f, "   EXEC_TYP : {}\n", self.exec_typ)?;
-        write!(f, "   EXEC_VER : {}\n", self.exec_ver)?;
-        write!(f, "   TEST_COD : {}\n", self.test_cod)?;
-        write!(f, "   TST_TEMP : {}\n", self.tst_temp)?;
-        write!(f, "   USER_TXT : {}\n", self.user_txt)?;
-        write!(f, "   AUX_FILE : {}\n", self.aux_file)?;
-        write!(f, "   PKG_TYP  : {}\n", self.pkg_typ)?;
-        write!(f, "   FAMLY_ID : {}\n", self.famly_id)?;
-        write!(f, "   DATE_COD : {}\n", self.date_cod)?;
-        write!(f, "   FACIL_ID : {}\n", self.facil_id)?;
-        write!(f, "   FLOOR_ID : {}\n", self.floor_id)?;
-        write!(f, "   PROC_ID  : {}\n", self.proc_id)?;
-        write!(f, "   OPER_FRQ : {}\n", self.oper_frq)?;
-        write!(f, "   SPEC_NAM : {}\n", self.spec_nam)?;
-        write!(f, "   SPEC_VER : {}\n", self.spec_ver)?;
-        write!(f, "   FLOW_ID  : {}\n", self.flow_id)?;
-        write!(f, "   SETUP_ID : {}\n", self.setup_id)?;
-        write!(f, "   DSGN_REV : {}\n", self.dsgn_rev)?;
-        write!(f, "   ENG_ID   : {}\n", self.eng_id)?;
-        write!(f, "   ROM_COD  : {}\n", self.rom_cod)?;
-        write!(f, "   SERL_NUM : {}\n", self.serl_num)?;
-        write!(f, "   SUPR_NAM : {}\n", self.supr_nam)
+        write!(f, "   SETUP_T [U4E] : {}\n", self.setup_t)?;
+        write!(f, "   START_T [U4E] : {}\n", self.start_t)?;
+        write!(f, "   STAT_NUM [U1] : {}\n", self.stat_num)?;
+        write!(f, "   MODE_COD [C1] : '{}'\n", self.mode_cod)?;
+        write!(f, "   RTST_COD [C1] : '{}'\n", self.rtst_cod)?;
+        write!(f, "   PROT_COD [C1] : '{}'\n", self.prot_cod)?;
+        write!(f, "   BURN_TIM [U2] : {}\n", self.burn_tim)?;
+        write!(f, "   CMOD_COD [C1] : '{}'\n", self.cmod_cod)?;
+        write!(f, "   LOT_ID   [Cn] : '{}'\n", self.lot_id)?;
+        write!(f, "   PART_TYP [Cn] : '{}'\n", self.part_typ)?;
+        write!(f, "   NODE_NAM [Cn] : '{}'\n", self.node_nam)?;
+        write!(f, "   TSTR_TYP [Cn] : '{}'\n", self.tstr_typ)?;
+        write!(f, "   JOB_NAM  [Cn] : '{}'\n", self.job_nam)?;
+        write!(f, "   JOB_REV  [Cn] : '{}'\n", self.job_rev)?;
+        write!(f, "   SBLOT_ID [Cn] : '{}'\n", self.sblot_id)?;
+        write!(f, "   OPER_NAM [Cn] : '{}'\n", self.oper_nam)?;
+        write!(f, "   EXEC_TYP [Cn] : '{}'\n", self.exec_typ)?;
+        write!(f, "   EXEC_VER [Cn] : '{}'\n", self.exec_ver)?;
+        write!(f, "   TEST_COD [Cn] : '{}'\n", self.test_cod)?;
+        write!(f, "   TST_TEMP [Cn] : '{}'\n", self.tst_temp)?;
+        write!(f, "   USER_TXT [Cn] : '{}'\n", self.user_txt)?;
+        write!(f, "   AUX_FILE [Cn] : '{}'\n", self.aux_file)?;
+        write!(f, "   PKG_TYP  [Cn] : '{}'\n", self.pkg_typ)?;
+        write!(f, "   FAMLY_ID [Cn] : '{}'\n", self.famly_id)?;
+        write!(f, "   DATE_COD [Cn] : '{}'\n", self.date_cod)?;
+        write!(f, "   FACIL_ID [Cn] : '{}'\n", self.facil_id)?;
+        write!(f, "   FLOOR_ID [Cn] : '{}'\n", self.floor_id)?;
+        write!(f, "   PROC_ID  [Cn] : '{}'\n", self.proc_id)?;
+        write!(f, "   OPER_FRQ [Cn] : '{}'\n", self.oper_frq)?;
+        write!(f, "   SPEC_NAM [Cn] : '{}'\n", self.spec_nam)?;
+        write!(f, "   SPEC_VER [Cn] : '{}'\n", self.spec_ver)?;
+        write!(f, "   FLOW_ID  [Cn] : '{}'\n", self.flow_id)?;
+        write!(f, "   SETUP_ID [Cn] : '{}'\n", self.setup_id)?;
+        write!(f, "   DSGN_REV [Cn] : '{}'\n", self.dsgn_rev)?;
+        write!(f, "   ENG_ID   [Cn] : '{}'\n", self.eng_id)?;
+        write!(f, "   ROM_COD  [Cn] : '{}'\n", self.rom_cod)?;
+        write!(f, "   SERL_NUM [Cn] : '{}'\n", self.serl_num)?;
+        write!(f, "   SUPR_NAM [Cn] : '{}'\n", self.supr_nam)
     }
 }
 
 #[derive(Debug, Eq, PartialEq, STDFRecord)]
 pub struct MRR<'a> {
-    pub finish_t: U4,
+    pub finish_t: U4E,
     #[default(C1::from(b' '))]
     pub disp_cod: C1,
     #[default(Cn(b""))]
@@ -225,10 +226,10 @@ pub struct MRR<'a> {
 impl <'a> fmt::Display for MRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MRR : Master Result Record\n")?;
-        write!(f, "   FINISH_T : {}\n", self.finish_t)?;
-        write!(f, "   DISP_COD : {}\n", self.disp_cod)?;
-        write!(f, "   USR_DESC : {}\n", self.usr_desc)?;
-        write!(f, "   EXC_DESC : {}\n", self.exc_desc)
+        write!(f, "   FINISH_T [U4E] : {}\n", self.finish_t)?;
+        write!(f, "   DISP_COD  [C1] : '{}'\n", self.disp_cod)?;
+        write!(f, "   USR_DESC  [Cn] : '{}'\n", self.usr_desc)?;
+        write!(f, "   EXC_DESC  [Cn] : '{}'\n", self.exc_desc)
     }
 }
 
@@ -250,13 +251,13 @@ pub struct PCR {
 impl fmt::Display for PCR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PCR : Part Count Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   PART_CNT : {}\n", self.part_cnt)?;
-        write!(f, "   RTST_CNT : {}\n", self.rtst_cnt)?;
-        write!(f, "   ABRT_CNT : {}\n", self.abrt_cnt)?;
-        write!(f, "   GOOD_CNT : {}\n", self.good_cnt)?;
-        write!(f, "   FUNC_CNT : {}\n", self.func_cnt)
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
+        write!(f, "   PART_CNT [U4] : {}\n", self.part_cnt)?;
+        write!(f, "   RTST_CNT [U4] : {}\n", self.rtst_cnt)?;
+        write!(f, "   ABRT_CNT [U4] : {}\n", self.abrt_cnt)?;
+        write!(f, "   GOOD_CNT [U4] : {}\n", self.good_cnt)?;
+        write!(f, "   FUNC_CNT [U4] : {}\n", self.func_cnt)
     }
 }
 
@@ -275,12 +276,12 @@ pub struct HBR<'a> {
 impl <'a> fmt::Display for HBR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HBR : Hard Bin Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   HBIN_NUM : {}\n", self.hbin_num)?;
-        write!(f, "   HBIN_CNT : {}\n", self.hbin_cnt)?;
-        write!(f, "   HBIN_PF  : {}\n", self.hbin_pf)?;
-        write!(f, "   HBIN_NAM : {}\n", self.hbin_nam)
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
+        write!(f, "   HBIN_NUM [U2] : {}\n", self.hbin_num)?;
+        write!(f, "   HBIN_CNT [U4] : {}\n", self.hbin_cnt)?;
+        write!(f, "   HBIN_PF  [C1] : '{}'\n", self.hbin_pf)?;
+        write!(f, "   HBIN_NAM [Cn] : '{}'\n", self.hbin_nam)
     }
 }
 
@@ -299,12 +300,12 @@ pub struct SBR<'a> {
 impl <'a> fmt::Display for SBR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SBR : Soft Bin Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   SBIN_NUM : {}\n", self.sbin_num)?;
-        write!(f, "   SBIN_CNT : {}\n", self.sbin_cnt)?;
-        write!(f, "   SBIN_PF  : {}\n", self.sbin_pf)?;
-        write!(f, "   SBIN_NAM : {}\n", self.sbin_nam)
+        write!(f, "   HEAD_NUM [U1]: {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1]: {}\n", self.site_num)?;
+        write!(f, "   SBIN_NUM [U2]: {}\n", self.sbin_num)?;
+        write!(f, "   SBIN_CNT [U4]: {}\n", self.sbin_cnt)?;
+        write!(f, "   SBIN_PF  [C1]: '{}'\n", self.sbin_pf)?;
+        write!(f, "   SBIN_NAM [Cn]: '{}'\n", self.sbin_nam)
     }
 }
 
@@ -328,13 +329,13 @@ pub struct PMR<'a> {
 impl <'a> fmt::Display for PMR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PMR : Pin Map Record\n")?;
-        write!(f, "   PMR_INDEX : {}\n", self.pmr_index)?;
-        write!(f, "   CHAN_TYP  : {}\n", self.chan_typ)?;
-        write!(f, "   CHAN_NAM  : {}\n", self.chan_nam)?;
-        write!(f, "   PHY_NAM   : {}\n", self.phy_nam)?;
-        write!(f, "   LOG_NAM   : {}\n", self.log_nam)?;
-        write!(f, "   HEAD_NUM  : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM  : {}\n", self.site_num)
+        write!(f, "   PMR_INDEX [U2] : {}\n", self.pmr_index)?;
+        write!(f, "   CHAN_TYP  [U2] : {}\n", self.chan_typ)?;
+        write!(f, "   CHAN_NAM  [Cn] : '{}'\n", self.chan_nam)?;
+        write!(f, "   PHY_NAM   [Cn] : '{}'\n", self.phy_nam)?;
+        write!(f, "   LOG_NAM   [Cn] : {}\n", self.log_nam)?;
+        write!(f, "   HEAD_NUM  [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM  [U1] : {}\n", self.site_num)
     }
 }
 
@@ -353,10 +354,10 @@ pub struct PGR<'a> {
 impl <'a> fmt::Display for PGR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PGR : Pin Group Record\n")?;
-        write!(f, "   GRP_INDX : {}\n", self.grp_indx)?;
-        write!(f, "   GRP_NAM  : {}\n", self.grp_nam)?;
-        write!(f, "   INDX_CNT : {}\n", self.indx_cnt)?;
-        write!(f, "   PMR_INDX : {:?}\n", self.pmr_indx)
+        write!(f, "   GRP_INDX   [U2] : {}\n", self.grp_indx)?;
+        write!(f, "   GRP_NAM    [Cn] : {}\n", self.grp_nam)?;
+        write!(f, "   INDX_CNT k [U2] : {}\n", self.indx_cnt)?;
+        write!(f, "   PMR_INDX [kxU2] : {:?}\n", self.pmr_indx)  //TODO: implement std::fmt::Display for Vec<U2>
     }
 }
 
@@ -389,14 +390,14 @@ pub struct PLR<'a> {
 impl <'a> fmt::Display for PLR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PLR : Pin List Record\n")?;
-        write!(f, "   GRP_CNT  : {}\n", self.grp_cnt)?;
-        write!(f, "   GRP_INDX : {:?}\n", self.grp_indx)?;
-        write!(f, "   GRP_MODE : {:?}\n", self.grp_mode)?;
-        write!(f, "   GRP_RADX : {:?}\n", self.grp_radx)?;
-        write!(f, "   PGM_CHAR : {:?}\n", self.pgm_char)?;
-        write!(f, "   RTN_CHAR : {:?}\n", self.rtn_char)?;
-        write!(f, "   PGM_CHAL : {:?}\n", self.pgm_chal)?;
-        write!(f, "   RTN_CHAL : {:?}\n", self.rtn_chal)
+        write!(f, "   GRP_CNT  k [U2]: {}\n", self.grp_cnt)?;
+        write!(f, "   GRP_INDX [kxU2]: {:?}\n", self.grp_indx)?; //TODO: implement std::fmt::Display for Vec<U2>
+        write!(f, "   GRP_MODE [kxU2]: {:?}\n", self.grp_mode)?; //TODO: implement std::fmt::Display for Vec<U2>
+        write!(f, "   GRP_RADX [kxU1]: {:?}\n", self.grp_radx)?; //TODO: implement std::fmt::Display for Vec<U1>
+        write!(f, "   PGM_CHAR [kxCn]: {:?}\n", self.pgm_char)?; //TODO: implement std::fmt::Display for Vec<Cn>
+        write!(f, "   RTN_CHAR [kxCn]: {:?}\n", self.rtn_char)?; //TODO: implement std::fmt::Display for Vec<Cn>
+        write!(f, "   PGM_CHAL [kxCn]: {:?}\n", self.pgm_chal)?; //TODO: implement std::fmt::Display for Vec<Cn>
+        write!(f, "   RTN_CHAL [kxCn]: {:?}\n", self.rtn_chal)   //TODO: implement std::fmt::Display for Vec<Cn>
     }
 }
 
@@ -411,8 +412,8 @@ pub struct RDR {
 impl fmt::Display for RDR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "RDR : Retest Data Record\n")?;
-        write!(f, "   NUM_BINS : {}\n", self.num_bins)?;
-        write!(f, "   RTST_BIN : {:?}\n", self.rtst_bin)
+        write!(f, "   NUM_BINS k [U2] : {}\n", self.num_bins)?;
+        write!(f, "   RTST_BIN [kxU2] : {:?}\n", self.rtst_bin) //TODO: implement std::fmt::Display for Vec<U2>
     }
 }
 
@@ -461,26 +462,26 @@ pub struct SDR<'a> {
 impl <'a> fmt::Display for SDR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SDR : Site Description Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_GRP : {}\n", self.site_grp)?;
-        write!(f, "   SITE_CNT : {}\n", self.site_cnt)?;
-        write!(f, "   SITE_NUM : {:?}\n", self.site_num)?;
-        write!(f, "   HAND_TYP : {}\n", self.hand_typ)?;
-        write!(f, "   HAND_ID  : {}\n", self.hand_id)?;
-        write!(f, "   CARD_TYP : {}\n", self.card_typ)?;
-        write!(f, "   CARD_ID  : {}\n", self.card_id)?;
-        write!(f, "   LOAD_TYP : {}\n", self.load_typ)?;
-        write!(f, "   LOAD_ID  : {}\n", self.load_id)?;
-        write!(f, "   DIB_TYP  : {}\n", self.dib_typ)?;
-        write!(f, "   DIB_ID   : {}\n", self.dib_id)?;
-        write!(f, "   CABL_TYP : {}\n", self.cabl_typ)?;
-        write!(f, "   CABL_ID  : {}\n", self.cabl_id)?;
-        write!(f, "   CONT_TYP : {}\n", self.cont_typ)?;
-        write!(f, "   CONT_ID  : {}\n", self.cont_id)?;
-        write!(f, "   LASR_TYP : {}\n", self.lasr_typ)?;
-        write!(f, "   LASR_ID  : {}\n", self.lasr_id)?;
-        write!(f, "   EXTR_TYP : {}\n", self.extr_typ)?;
-        write!(f, "   EXTR_ID  : {}\n", self.extr_id)
+        write!(f, "   HEAD_NUM   [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_GRP   [U1] : {}\n", self.site_grp)?;
+        write!(f, "   SITE_CNT k [U1] : {}\n", self.site_cnt)?;
+        write!(f, "   SITE_NUM [kxU1] : {:?}\n", self.site_num)?; //TODO: implement std::fmt::Display for Vec<U1>
+        write!(f, "   HAND_TYP   [Cn] : '{}'\n", self.hand_typ)?;
+        write!(f, "   HAND_ID    [Cn] : '{}'\n", self.hand_id)?;
+        write!(f, "   CARD_TYP   [Cn] : '{}'\n", self.card_typ)?;
+        write!(f, "   CARD_ID    [Cn] : '{}'\n", self.card_id)?;
+        write!(f, "   LOAD_TYP   [Cn] : '{}'\n", self.load_typ)?;
+        write!(f, "   LOAD_ID    [Cn] : '{}'\n", self.load_id)?;
+        write!(f, "   DIB_TYP    [Cn] : '{}'\n", self.dib_typ)?;
+        write!(f, "   DIB_ID     [Cn] : '{}'\n", self.dib_id)?;
+        write!(f, "   CABL_TYP   [Cn] : '{}'\n", self.cabl_typ)?;
+        write!(f, "   CABL_ID    [Cn] : '{}'\n", self.cabl_id)?;
+        write!(f, "   CONT_TYP   [Cn] : '{}'\n", self.cont_typ)?;
+        write!(f, "   CONT_ID    [Cn] : '{}'\n", self.cont_id)?;
+        write!(f, "   LASR_TYP   [Cn] : '{}'\n", self.lasr_typ)?;
+        write!(f, "   LASR_ID    [Cn] : '{}'\n", self.lasr_id)?;
+        write!(f, "   EXTR_TYP   [Cn] : '{}'\n", self.extr_typ)?;
+        write!(f, "   EXTR_ID    [Cn] : '{}'\n", self.extr_id)
     }
 } 
 
@@ -497,10 +498,10 @@ pub struct WIR<'a> {
 impl <'a> fmt::Display for WIR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WIR : Wafer Information Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_GRP : {}\n", self.site_grp)?;
-        write!(f, "   START_T  : {}\n", self.start_t)?;
-        write!(f, "   WAFER_ID : {}\n", self.wafer_id)
+        write!(f, "   HEAD_NUM  [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_GRP  [U1] : {}\n", self.site_grp)?;
+        write!(f, "   START_T  [U4E] : {}\n", self.start_t)?;
+        write!(f, "   WAFER_ID  [Cn] : '{}'\n", self.wafer_id)
     }
 }	
 
@@ -536,20 +537,20 @@ pub struct WRR<'a> {
 impl <'a> fmt::Display for WRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WRR : Wafer Result Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_GRP : {}\n", self.site_grp)?;
-        write!(f, "   FINISH_T : {}\n", self.finish_t)?;
-        write!(f, "   PART_CNT : {}\n", self.part_cnt)?;
-        write!(f, "   RTST_CNT : {}\n", self.rtst_cnt)?;
-        write!(f, "   ABRT_CNT : {}\n", self.abrt_cnt)?;
-        write!(f, "   GOOD_CNT : {}\n", self.good_cnt)?;
-        write!(f, "   FUNC_CNT : {}\n", self.func_cnt)?;
-        write!(f, "   WAFER_ID : {}\n", self.wafer_id)?;
-        write!(f, "   FABWF_ID : {}\n", self.fabwf_id)?;
-        write!(f, "   FRAME_ID : {}\n", self.frame_id)?;
-        write!(f, "   MASK_ID  : {}\n", self.mask_id)?;
-        write!(f, "   USR_DESC : {}\n", self.usr_desc)?;
-        write!(f, "   EXC_DESC : {}\n", self.exc_desc)
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_GRP [U1] : {}\n", self.site_grp)?;
+        write!(f, "   FINISH_T [U4] : {}\n", self.finish_t)?;
+        write!(f, "   PART_CNT [U4] : {}\n", self.part_cnt)?;
+        write!(f, "   RTST_CNT [U4] : {}\n", self.rtst_cnt)?;
+        write!(f, "   ABRT_CNT [U4] : {}\n", self.abrt_cnt)?;
+        write!(f, "   GOOD_CNT [U4] : {}\n", self.good_cnt)?;
+        write!(f, "   FUNC_CNT [U4] : {}\n", self.func_cnt)?;
+        write!(f, "   WAFER_ID [Cn] : '{}'\n", self.wafer_id)?;
+        write!(f, "   FABWF_ID [Cn] : '{}'\n", self.fabwf_id)?;
+        write!(f, "   FRAME_ID [Cn] : '{}'\n", self.frame_id)?;
+        write!(f, "   MASK_ID  [Cn] : '{}'\n", self.mask_id)?;
+        write!(f, "   USR_DESC [Cn] : '{}'\n", self.usr_desc)?;
+        write!(f, "   EXC_DESC [Cn] : '{}'\n", self.exc_desc)
     }
 }
 
@@ -578,15 +579,15 @@ pub struct WCR {
 impl fmt::Display for WCR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WCR : Wafer Configuration Record\n")?;
-        write!(f, "   WAFR_SIZ : {}\n", self.wafr_siz)?;
-        write!(f, "   DIE_HT   : {}\n", self.die_ht)?;
-        write!(f, "   DIE_WID  : {}\n", self.die_wid)?;
-        write!(f, "   WF_UNITS : {}\n", self.wf_units)?;
-        write!(f, "   WF_FLAT  : {}\n", self.wf_flat)?;
-        write!(f, "   CENTER_X : {}\n", self.center_x)?;
-        write!(f, "   CENTER_Y : {}\n", self.center_y)?;
-        write!(f, "   POS_X    : {}\n", self.pos_x)?;
-        write!(f, "   POS_Y    : {}\n", self.pos_y)
+        write!(f, "   WAFR_SIZ [R4] : {}\n", self.wafr_siz)?;
+        write!(f, "   DIE_HT   [R4] : {}\n", self.die_ht)?;
+        write!(f, "   DIE_WID  [R4] : {}\n", self.die_wid)?;
+        write!(f, "   WF_UNITS [U1] : {}\n", self.wf_units)?;
+        write!(f, "   WF_FLAT  [C1] : {}\n", self.wf_flat)?;
+        write!(f, "   CENTER_X [I2] : {}\n", self.center_x)?;
+        write!(f, "   CENTER_Y [I2] : {}\n", self.center_y)?;
+        write!(f, "   POS_X    [C1] : '{}'\n", self.pos_x)?;
+        write!(f, "   POS_Y    [C1] : '{}'\n", self.pos_y)
     }
 }
 
@@ -599,8 +600,8 @@ pub struct PIR {
 impl fmt::Display for PIR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PIR : Part Information Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)
     }
 }
 
@@ -630,18 +631,18 @@ pub struct PRR<'a> {
 impl <'a> fmt::Display for PRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PRR : Part Results Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   PART_FLG : {}\n", self.part_flg)?;
-        write!(f, "   NUM_TEST : {}\n", self.num_test)?;
-        write!(f, "   HARD_BIN : {}\n", self.hard_bin)?;
-        write!(f, "   SOFT_BIN : {}\n", self.soft_bin)?;
-        write!(f, "   X_COORD  : {}\n", self.x_coord)?;
-        write!(f, "   Y_COORD  : {}\n", self.y_coord)?;
-        write!(f, "   TEST_T   : {}\n", self.test_t)?;
-        write!(f, "   PART_ID  : {}\n", self.part_id)?;
-        write!(f, "   PART_TXT : {}\n", self.part_txt)?;
-        write!(f, "   PART_FIX : {}\n", self.part_fix)
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
+        write!(f, "   PART_FLG [B1] : {}\n", self.part_flg)?;
+        write!(f, "   NUM_TEST [U2] : {}\n", self.num_test)?;
+        write!(f, "   HARD_BIN [U2] : {}\n", self.hard_bin)?;
+        write!(f, "   SOFT_BIN [U2] : {}\n", self.soft_bin)?;
+        write!(f, "   X_COORD  [I2] : {}\n", self.x_coord)?;
+        write!(f, "   Y_COORD  [I2] : {}\n", self.y_coord)?;
+        write!(f, "   TEST_T   [U4] : {}\n", self.test_t)?;
+        write!(f, "   PART_ID  [Cn] : '{}'\n", self.part_id)?;
+        write!(f, "   PART_TXT [Cn] : '{}'\n", self.part_txt)?;
+        write!(f, "   PART_FIX [Bn] : {}\n", self.part_fix)
     }
 }
 
@@ -677,22 +678,22 @@ pub struct TSR<'a> {
 impl <'a> fmt::Display for TSR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "TSR : Test Synopsis Record\n")?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   TEST_TYP : {}\n", self.test_typ)?;
-        write!(f, "   TEST_NUM : {}\n", self.test_num)?;
-        write!(f, "   EXEC_CNT : {}\n", self.exec_cnt)?;
-        write!(f, "   FAIL_CNT : {}\n", self.fail_cnt)?;
-        write!(f, "   ALRM_CNT : {}\n", self.alrm_cnt)?;
-        write!(f, "   TEST_NAM : {}\n", self.test_nam)?;
-        write!(f, "   SEQ_NAME : {}\n", self.seq_name)?;
-        write!(f, "   TEST_LBL : {}\n", self.test_lbl)?;
-        write!(f, "   OPT_FLAG : {}\n", self.opt_flag)?;
-        write!(f, "   TEST_TIM : {}\n", self.test_tim)?;
-        write!(f, "   TEST_MIN : {}\n", self.test_min)?;
-        write!(f, "   TEST_MAX : {}\n", self.test_max)?;
-        write!(f, "   TST_SUMS : {}\n", self.tst_sums)?;
-        write!(f, "   TST_SQRS : {}\n", self.tst_sqrs)
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
+        write!(f, "   TEST_TYP [C1] : '{}'\n", self.test_typ)?;
+        write!(f, "   TEST_NUM [U4] : {}\n", self.test_num)?;
+        write!(f, "   EXEC_CNT [U4] : {}\n", self.exec_cnt)?;
+        write!(f, "   FAIL_CNT [U4] : {}\n", self.fail_cnt)?;
+        write!(f, "   ALRM_CNT [U4] : {}\n", self.alrm_cnt)?;
+        write!(f, "   TEST_NAM [Cn] : '{}'\n", self.test_nam)?;
+        write!(f, "   SEQ_NAME [Cn] : '{}'\n", self.seq_name)?;
+        write!(f, "   TEST_LBL [Cn] : '{}'\n", self.test_lbl)?;
+        write!(f, "   OPT_FLAG [B1] : {}\n", self.opt_flag)?;
+        write!(f, "   TEST_TIM [R4] : {}\n", self.test_tim)?;
+        write!(f, "   TEST_MIN [R4] : {}\n", self.test_min)?;
+        write!(f, "   TEST_MAX [R4] : {}\n", self.test_max)?;
+        write!(f, "   TST_SUMS [R4] : {}\n", self.tst_sums)?;
+        write!(f, "   TST_SQRS [R4] : {}\n", self.tst_sqrs)
     }
 }
 
@@ -709,7 +710,7 @@ pub struct PTR<'a> {
     pub test_txt: Cn<'a>,
     #[default(Cn(b""))]
     pub alarm_id: Cn<'a>,
-    #[default(B1::from(0xff))]
+    #[default(B1::from(0x00))]
     pub opt_flag: B1,
     #[default(I1::from(std::i8::MIN))]
     pub res_scal: I1,
@@ -738,28 +739,97 @@ pub struct PTR<'a> {
 impl <'a> fmt::Display for PTR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PTR : Parametric Test Record\n")?;
-        write!(f, "   TEST_NUM : {}\n", self.test_num)?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   TEST_FLG : {}\n", self.test_flg)?;
-        write!(f, "   PARM_FLG : {}\n", self.parm_flg)?;
-        write!(f, "   RESULT   : {}\n", self.result)?;
-        write!(f, "   TEST_TXT : {}\n", self.test_txt)?;
-        write!(f, "   ALARM_ID : {}\n", self.alarm_id)?;
-        write!(f, "   OPT_FLAG : {}\n", self.opt_flag)?;
-        write!(f, "   RES_SCAL : {}\n", self.res_scal)?;
-        write!(f, "   LLM_SCAL : {}\n", self.llm_scal)?;
-        write!(f, "   HLM_SCAL : {}\n", self.hlm_scal)?;
-        write!(f, "   LO_LIMIT : {}\n", self.lo_limit)?;
-        write!(f, "   HI_LIMIT : {}\n", self.hi_limit)?;
-        write!(f, "   UNITS    : {}\n", self.units)?;
-        write!(f, "   C_RESFMT : {}\n", self.c_resfmt)?;
-        write!(f, "   C_LLMFMT : {}\n", self.c_llmfmt)?;
-        write!(f, "   C_HLMFMT : {}\n", self.c_hlmfmt)?;
-        write!(f, "   LO_SPEC  : {}\n", self.lo_spec)?;
-        write!(f, "   HI_SPEC  : {}\n", self.hi_spec)
+        write!(f, "   TEST_NUM [U4] : {}\n", self.test_num)?;
+        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
+        write!(f, "   TEST_FLG [B1] : {} {}\n", self.test_flg, ptr_test_flg(self.test_flg))?;
+        write!(f, "   PARM_FLG [B1] : {} {}\n", self.parm_flg, ptr_parm_flg(self.parm_flg))?;
+        write!(f, "   RESULT   [R4] : {}\n", self.result)?;
+        write!(f, "   TEST_TXT [Cn] : '{}'\n", self.test_txt)?;
+        if self.opt_flag == B1::from(0x00) {
+            write!(f, "   ALARM_ID [Cn] : {}\n", self.alarm_id)
+        } else {
+            write!(f, "   ALARM_ID [Cn] : {}\n", self.alarm_id)?;
+            write!(f, "   --------------\n")?;
+            write!(f, "   OPT_FLAG [B1] : {} {}\n", self.opt_flag, ptr_opt_flag(self.opt_flag))?;
+            write!(f, "   RES_SCAL [I1] : {}\n", self.res_scal)?;
+            write!(f, "   LLM_SCAL [I1] : {}\n", self.llm_scal)?;
+            write!(f, "   HLM_SCAL [I1] : {}\n", self.hlm_scal)?;
+            write!(f, "   LO_LIMIT [R4] : {}\n", self.lo_limit)?;
+            write!(f, "   HI_LIMIT [R4] : {}\n", self.hi_limit)?;
+            write!(f, "   UNITS    [Cn] : '{}'\n", self.units)?;
+            write!(f, "   C_RESFMT [Cn] : '{}'\n", self.c_resfmt)?;
+            write!(f, "   C_LLMFMT [Cn] : '{}'\n", self.c_llmfmt)?;
+            write!(f, "   C_HLMFMT [Cn] : '{}'\n", self.c_hlmfmt)?;
+            write!(f, "   LO_SPEC  [R4] : {}\n", self.lo_spec)?;
+            write!(f, "   HI_SPEC  [R4] : {}\n", self.hi_spec)
+        }
     }
 }
+
+fn ptr_test_flg(test_flg: B1) -> String {
+    let mut msg = String::new();
+    let mut info: Vec<String> = Vec::new(); 
+
+    if u8::from(test_flg) & 0b0000_0001 == 0b0000_0001  { info.push(String::from("Alarm")); }
+    if u8::from(test_flg) & 0b0000_0010 == 0b0000_0010  { info.push(String::from("RESULT not valid")); }
+    if u8::from(test_flg) & 0b0000_0100 == 0b0000_0100  { info.push(String::from("RESULT is unreliable")); }
+    if u8::from(test_flg) & 0b0000_1000 == 0b0000_1000  { info.push(String::from("Timeout")); }
+    if u8::from(test_flg) & 0b0001_0000 == 0b0001_0000  { info.push(String::from("Test not executed")); }
+    if u8::from(test_flg) & 0b0010_0000 == 0b0010_0000  { info.push(String::from("Test aborted")); }
+
+    msg.push_str("(");
+    msg.push_str(&info.join(", "));
+    msg.push_str(") → ");
+
+    if u8::from(test_flg) & 0b0100_0000 == 0b0100_0000  { 
+        msg.push_str("?");
+    } else {
+        if u8::from(test_flg) & 0b1000_0000 == 0b1000_0000 {
+            msg.push_str("FAIL");
+        } else {
+            msg.push_str("PASS");
+        }
+    }
+    msg
+}
+
+fn ptr_parm_flg(parm_flg: B1) -> String {
+    let mut msg = String::new();
+    let mut info: Vec<String> = Vec::new();
+
+    if u8::from(parm_flg) & 0b0000_0001 == 0b0000_0001  { info.push(String::from("Scale error")); }
+    if u8::from(parm_flg) & 0b0000_0010 == 0b0000_0010  { info.push(String::from("Drift error")); }
+    if u8::from(parm_flg) & 0b0000_0100 == 0b0000_0100  { info.push(String::from("Oscillation detected")); }
+    if u8::from(parm_flg) & 0b0000_1000 == 0b0000_1000  { info.push(String::from("RESULT > HI_LIMIT")); }
+    if u8::from(parm_flg) & 0b0001_0000 == 0b0001_0000  { info.push(String::from("RESULT < LO_LIMIT")); }
+
+    msg.push_str("(");
+    msg.push_str(&info.join(", "));
+    msg.push_str(")");
+
+    msg
+}
+
+fn ptr_opt_flag(opt_flag:B1) -> String {
+    let mut msg = String::new();
+    let mut info: Vec<String> = Vec::new();
+
+    if u8::from(opt_flag) & 0b0000_0001 == 0b0000_0001  { info.push(String::from("RES_SCAL is invalid")); }
+    if u8::from(opt_flag) & 0b0000_0100 == 0b0000_0100  { info.push(String::from("No low spec limit")); }
+    if u8::from(opt_flag) & 0b0000_1000 == 0b0000_1000  { info.push(String::from("No high spec limit")); }
+    if u8::from(opt_flag) & 0b0001_0000 == 0b0001_0000  { info.push(String::from("LO_LIMIT and LLM_SCAL are invalid")); }
+    if u8::from(opt_flag) & 0b0010_0000 == 0b0010_0000  { info.push(String::from("HI_LIMIT and HLM_SCAL are invalid")); }  
+    if u8::from(opt_flag) & 0b0100_0000 == 0b0100_0000  { info.push(String::from("no LO_LIMIT")); } 
+    if u8::from(opt_flag) & 0b1000_0000 == 0b1000_0000  { info.push(String::from("no HI_LIMIT")); }
+
+    msg.push_str("(");
+    msg.push_str(&info.join(", "));
+    msg.push_str(")");
+
+    msg
+}
+
 
 #[derive(Debug, PartialEq, STDFRecord)]
 pub struct MPR<'a> {
@@ -769,20 +839,20 @@ pub struct MPR<'a> {
     pub test_flg: B1,
     pub parm_flg: B1,
     #[default(U2::from(0))]
-    pub rtn_icnt: U2,
+    pub rtn_icnt: U2,      // j
     #[default(U2::from(0))]
-    pub rslt_cnt: U2,
+    pub rslt_cnt: U2,      // k
     #[array_length(rtn_icnt)]
-    #[array_type(N1)]
-    pub rtn_stat: Vec<N1>,
+    #[array_type(N1)] 
+    pub rtn_stat: Vec<N1>, // jxN1
     #[array_length(rslt_cnt)]
     #[array_type(R4)]
-    pub rtn_rslt: Vec<R4>,
+    pub rtn_rslt: Vec<R4>, // kxR4
     #[default(Cn(b""))]
     pub test_txt: Cn<'a>,
     #[default(Cn(b""))]
     pub alarm_id: Cn<'a>,
-    #[default(B1::from(0xff))]
+    #[default(B1::from(0x00))]
     pub opt_flag: B1,
     #[default(I1::from(std::i8::MIN))]
     pub res_scal: I1,
@@ -800,7 +870,7 @@ pub struct MPR<'a> {
     pub incr_in: R4,
     #[array_length(rtn_icnt)]
     #[array_type(U2)]
-    pub rtn_indx: Vec<U2>,
+    pub rtn_indx: Vec<U2>, // jxU2
     #[default(Cn(b""))]
     pub units: Cn<'a>,
     #[default(Cn(b""))]
@@ -820,33 +890,37 @@ pub struct MPR<'a> {
 impl <'a> fmt::Display for MPR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MPR : Multiple-Result Parametric Record\n")?;
-        write!(f, "   TEST_NUM : {}\n", self.test_num)?;
-        write!(f, "   HEAD_NUM : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM : {}\n", self.site_num)?;
-        write!(f, "   TEST_FLG : {}\n", self.test_flg)?;
-        write!(f, "   PARM_FLG : {}\n", self.parm_flg)?;
-        write!(f, "   RTN_ICNT : {}\n", self.rtn_icnt)?;
-        write!(f, "   RSLT_CNT : {}\n", self.rslt_cnt)?;
-        write!(f, "   RTN_STAT : {:?}\n", self.rtn_stat)?;
-        write!(f, "   RTN_RSLT : {:?}\n", self.rtn_rslt)?;
-        write!(f, "   TEST_TXT : {}\n", self.test_txt)?;
-        write!(f, "   ALARM_ID : {}\n", self.alarm_id)
-        // TODO: see how to implement the optional fields
-        // write!(f, "   OPT_FLAG : {}\n", self.opt_flag)?;
-        // write!(f, "   RES_SCAL : {}\n", self.res_scal)?;
-        // write!(f, "   LLM_SCAL : {}\n", self.llm_scal)?;
-        // write!(f, "   HLM_SCAL : {}\n", self.hlm_scal)?;
-        // write!(f, "   LO_LIMIT : {}\n", self.lo_limit)?;
-        // write!(f, "   HI_LIMIT : {}\n", self.hi_limit)?;
-        // write!(f, "   START_IN : {}\n", self.start_in)?;
-        // write!(f, "   INCR_IN  : {}\n", self.incr_in)?;
-        // write!(f, "   RTN_INDX : {}\n", self.rtn_indx)?;
-        // write!(f, "   UNITS    : {}\n", self.units)?;
-        // write!(f, "   UNITS_IN : {}\n", self.units_in)?;
-        // write!(f, "   C_RESFMT : {}\n", self.c_resfmt)?;
-        // write!(f, "   C_LLMFMT : {}\n", self.c_llmfmt)?;
-        // write!(f, "   LO_SPEC  : {}\n", self.lo_spec)?;
-        // write!(f, "   HI_SPEC  : {}\n", self..self.hi_spec)
+        write!(f, "   TEST_NUM   [U4] : {}\n", self.test_num)?;
+        write!(f, "   HEAD_NUM   [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM   [U1] : {}\n", self.site_num)?;
+        write!(f, "   TEST_FLG   [B1] : {}\n", self.test_flg)?;
+        write!(f, "   PARM_FLG   [B1] : {}\n", self.parm_flg)?;
+        write!(f, "   RTN_ICNT j [U2] : {}\n", self.rtn_icnt)?;
+        write!(f, "   RSLT_CNT k [U2] : {}\n", self.rslt_cnt)?;
+        write!(f, "   RTN_STAT [jxN1] : {:?}\n", self.rtn_stat)?; //TODO: implement std:fmt::Display for Vec<N1>
+        write!(f, "   RTN_RSLT [kxR4] : {:?}\n", self.rtn_rslt)?;  //TODO: implement std:fmt::Display for Vec<R4>
+        write!(f, "   TEST_TXT   [Cn] : '{}'\n", self.test_txt)?;
+        if self.opt_flag == B1::from(0x00) {
+            write!(f, "   ALARM_ID   [Cn] : '{}'\n", self.alarm_id)
+        } else {
+            write!(f, "   ALARM_ID   [Cn] : '{}'\n", self.alarm_id)?;
+            write!(f, "   OPT_FLAG   [B1] : {}\n", self.opt_flag)?;
+            write!(f, "   RES_SCAL   [I1] : {}\n", self.res_scal)?;
+            write!(f, "   LLM_SCAL   [I1] : {}\n", self.llm_scal)?;
+            write!(f, "   HLM_SCAL   [I1] : {}\n", self.hlm_scal)?;
+            write!(f, "   LO_LIMIT   [R4] : {}\n", self.lo_limit)?;
+            write!(f, "   HI_LIMIT   [R4] : {}\n", self.hi_limit)?;
+            write!(f, "   START_IN   [R4] : {}\n", self.start_in)?;
+            write!(f, "   INCR_IN    [R4] : {}\n", self.incr_in)?;
+            write!(f, "   RTN_INDX [jxU2] : {:?}\n", self.rtn_indx)?; //TODO: implement std:fmt::Display for Vec<U2>
+            write!(f, "   UNITS      [Cn] : '{}'\n", self.units)?;
+            write!(f, "   UNITS_IN   [Cn] : '{}'\n", self.units_in)?;
+            write!(f, "   C_RESFMT   [Cn] : '{}'\n", self.c_resfmt)?;
+            write!(f, "   C_LLMFMT   [Cn] : '{}'\n", self.c_llmfmt)?;
+            write!(f, "   C_HLMFMT   [Cn] : '{}'\n", self.c_hlmfmt)?;
+            write!(f, "   LO_SPEC    [R4] : {}\n", self.lo_spec)?;
+            write!(f, "   HI_SPEC    [R4] : {}\n", self.hi_spec) 
+        }
     }
 }
 
@@ -904,13 +978,50 @@ pub struct FTR<'a> {
     pub prog_txt: Cn<'a>,
     #[default(Cn(b""))]
     pub rslt_txt: Cn<'a>,
-    #[default(U1::from(0))]
+    #[default(U1::from(0xff))]
     pub patg_num: U1,
     #[default(Dn(0, b""))]
     pub spin_map: Dn<'a>,
 }
 
-// TODO: Implement fmt::Display for FTR
+impl <'a> fmt::Display for FTR<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "FTR : Functional Test Record\n")?;
+        write!(f, "   TEST_NUM   [U4] : {}\n", self.test_num)?;
+        write!(f, "   HEAD_NUM   [U1] : {}\n", self.head_num)?;
+        write!(f, "   SITE_NUM   [U1] : {}\n", self.site_num)?;
+        if self.opt_flag == B1::from(0x00) {
+            write!(f, "   TEST_FLG   [B1] : {}\n", self.test_flg)
+        } else {
+            write!(f, "   TEST_FLG   [B1] : {}\n", self.test_flg)?;
+            write!(f, "   OPT_FLAG   [B1] : {}\n", self.opt_flag)?;
+            write!(f, "   CYCL_CNT   [U4] : {}\n", self.cycl_cnt)?;
+            write!(f, "   REL_VADR   [U4] : {}\n", self.rel_vadr)?;
+            write!(f, "   REPT_CNT   [U4] : {}\n", self.rept_cnt)?;
+            write!(f, "   NUM_FAIL   [U4] : {}\n", self.num_fail)?;
+            write!(f, "   XFAIL_AD   [I4] : {}\n", self.xfail_ad)?;
+            write!(f, "   YFAIL_AD   [I4] : {}\n", self.yfail_ad)?;
+            write!(f, "   VECT_OFF   [I2] : {}\n", self.vect_off)?;
+            write!(f, "   RTN_ICNT j [U2] : {}\n", self.rtn_icnt)?;
+            write!(f, "   PGM_ICNT k [U2] : {}\n", self.pgm_icnt)?;
+            write!(f, "   RTN_INDX [jxU2] : {:?}\n", self.rtn_indx)?;
+            write!(f, "   RTN_STAT [jxN1] : {:?}\n", self.rtn_stat)?;
+            write!(f, "   PGM_INDX [kxU2] : {:?}\n", self.pgm_indx)?;
+            write!(f, "   PGM_STAT [kxN1] : {:?}\n", self.pgm_stat)?;
+            write!(f, "   FAIL_PIN   [Dn] : {}\n", self.fail_pin)?;
+            write!(f, "   VECT_NAM   [Cn] : '{}'\n", self.vect_nam)?;
+            write!(f, "   TIME_SET   [Cn] : '{}'\n", self.time_set)?;
+            write!(f, "   OP_CODE    [Cn] : '{}'\n", self.op_code)?;
+            write!(f, "   TEST_TXT   [Cn] : '{}'\n", self.test_txt)?;
+            write!(f, "   ALARM_ID   [Cn] : '{}'\n", self.alarm_id)?;
+            write!(f, "   PROG_TXT   [Cn] : '{}'\n", self.prog_txt)?;
+            write!(f, "   RSLT_TXT   [Cn] : '{}'\n", self.rslt_txt)?;
+            write!(f, "   PATG_NUM   [U1] : {}\n", self.patg_num)?;
+            write!(f, "   SPIN_MAP   [Dn] : {}\n", self.spin_map)
+        }
+    }
+}
+
 
 #[derive(Debug, Eq, PartialEq, STDFRecord)]
 pub struct BPS<'a> {
@@ -920,8 +1031,8 @@ pub struct BPS<'a> {
 
 impl <'a> fmt::Display for BPS<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "BPS\n")?;
-        write!(f, "   SEQ_NAME : {}\n", self.seq_name)
+        write!(f, "BPS : Begin Program Section record\n")?;
+        write!(f, "   SEQ_NAME [Cn] : '{}'\n", self.seq_name)
     }
 }
 
@@ -930,7 +1041,7 @@ pub struct EPS;
 
 impl fmt::Display for EPS {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "EPS\n")
+        write!(f, "EPS : End Program Section record\n")
     }
 }
 
@@ -946,8 +1057,8 @@ pub struct GDR<'a> {
 impl <'a> fmt::Display for GDR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "GDR\n")?;
-        write!(f, "   FLD_CNT  : {}\n", self.fld_cnt)?;
-        write!(f, "   GEN_DATA : {:?}\n", self.gen_data)
+        write!(f, "   FLD_CNT  [U2]: {}\n", self.fld_cnt)?;
+        write!(f, "   GEN_DATA [Vn]: {:?}\n", self.gen_data)
     }
 }
 
@@ -959,8 +1070,8 @@ pub struct DTR<'a> {
 
 impl <'a> fmt::Display for DTR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "DTR\n")?;
-        write!(f, "   TEXT_DAT : {}\n", self.text_dat)
+        write!(f, "DTR : Datalog Text Record\n")?;
+        write!(f, "   TEXT_DAT [Cn] : '{}'\n", self.text_dat)
     }
 }
 
@@ -970,6 +1081,10 @@ pub struct Raw<'a> {
     pub rec_sub: U1,
     pub contents: &'a [u8],
 }
+
+//TODO: Implement TryRead for Raw
+//TODO: Implement TryWrite for Raw
+//TODO: Implement Display for Raw
 
 #[derive(Debug)]
 pub enum V4<'a> {
@@ -1139,7 +1254,17 @@ impl<'a> V4<'a> {
     }
 }
 
+//TODO: Implement std::fmt::Display for V4
+// impl <'a> fmt::Display for V4<'a> {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             V4::MRR(rec) => write!(f, "{}", rec),
+//             _ => todo!(),
+//         }
+//     }
+// }
 
+//TODO: Document this function ... do we really need this ?!?
 pub fn is_supported_typ_sub(typ_sub: (u8, u8)) -> bool {
     match typ_sub {
         (0, 10) => true,
