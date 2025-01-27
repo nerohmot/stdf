@@ -42,6 +42,8 @@ stdf
 
     strip -i tests/test_data/test.stdf (-o ...) --atr --dtr --gdr --pcr --sbr --hbr --id
 
+    report -i tests/test_data/test.stdf -p  --> writes a pdf
+
     repair -i tests/test_data/test.stdf (-o -p) 
 
     concat -i file1.stdf file2.stdf -o concat.stdf -p
