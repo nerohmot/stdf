@@ -2,9 +2,14 @@ extern crate clap;
 
 use clap::{Arg, Command, crate_version, crate_authors, ArgAction, value_parser};
 use stdf::records::{PRR, V4, typ_sub_to_name, is_supported_records};
+
 use std::{fs::File, io::{Seek, SeekFrom}};
 use std::process;
+
 use stdf::{get_endian_from_file, get_index_from_file, mrr_offset_in_file};
+use stdf::conversions::dummy_function;
+use stdf::counts::count_records;
+
 use memmap::MmapOptions;
 use byte::BytesExt;
 
@@ -457,15 +462,10 @@ fn main() {
             }
         }
         Some(("play", sub_m)) => {
-            let input_file_name = sub_m.get_one::<String>("input_file").unwrap();
-            let mut file = match File::open(input_file_name){
-                Ok(file) => file,
-                Err(e) => {
-                    eprintln!("Error: {}", e);
-                    process::exit(1);
-                }
-            };
-            println!("mrr_offset_in_file = {}", mrr_offset_in_file(&mut file).unwrap());
+            let file_name = sub_m.get_one::<String>("input_file").unwrap().to_string();
+            let mut file = File::open(file_name).unwrap();
+            let record_count = count_records(&mut file, true).unwrap();
+            println!("->{}", record_count)
         }
         Some(("list", sub_m)) => {
             match sub_m.subcommand()    {
@@ -886,6 +886,7 @@ fn main() {
                     let output_file = sub_sub_m.get_one::<String>("output_file").unwrap_or(&default_output_file);
                     println!("Converting the STDF file '{}' to XLSX file '{}'", input_file, output_file);
                     // Add your logic for the "xlsx" subcommand here
+                    let a = dummy_function();
                 }
                 _ => eprintln!("No valid subcommand was used for convert_to"),
             }

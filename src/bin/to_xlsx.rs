@@ -1,62 +1,58 @@
 use ndarray::Array2;
-use xlsxwriter::*;
 use std::collections::HashMap;
+use rust_xlsxwriter::*;
 
-#[derive(Debug)]
-enum Data {
-    Bool(bool),
-    Float(f64),
-    Text(String),
-}
+fn main() -> Result<(), XlsxError> {
+    // Create a new Excel file object.
+    let mut workbook = Workbook::new();
 
-pub fn create_2d_array(index: HashMap<(u8, u8), Vec<u64>>) -> Array2<Data> {
-    // Determine the size of the array based on the index
-    let rows = index.len();
-    let cols = 3; // Example number of columns
+    // Create some formats to use in the worksheet.
+    let bold_format = Format::new().set_bold();
+    let decimal_format = Format::new().set_num_format("0.000");
+    let date_format = Format::new().set_num_format("yyyy-mm-dd");
+    let merge_format = Format::new()
+        .set_border(FormatBorder::Thin)
+        .set_align(FormatAlign::Center);
 
-    // Create a 2D array filled with a default value
-    let mut array = Array2::from_elem((rows, cols), Data::Bool(false));
+    // Add a worksheet to the workbook.
+    let worksheet = workbook.add_worksheet();
 
-    // Fill the array with different types of data
-    for ((i, j), elem) in array.indexed_iter_mut() {
-        *elem = match (i, j) {
-            (0, 0) => Data::Bool(true),
-            (0, 1) => Data::Float(3.14),
-            (0, 2) => Data::Text("Hello".to_string()),
-            _ => Data::Bool(false),
-        };
-    }
+    // Set the column width for clarity.
+    worksheet.set_column_width(0, 22)?;
 
-    array
-}
+    // Write a string without formatting.
+    worksheet.write(0, 0, "Hello")?;
 
-pub fn save_to_xlsx(array: &Array2<Data>, file_path: &str) -> Result<(), XlsxError> {
-    let workbook = Workbook::new(file_path);
-    let mut sheet = workbook.add_worksheet(None)?;
+    // Write a string with the bold format defined above.
+    worksheet.write_with_format(1, 0, "World", &bold_format)?;
 
-    for ((i, j), elem) in array.indexed_iter() {
-        match elem {
-            Data::Bool(value) => {
-                sheet.write_number(i as u32, j as u16, value, None)?;
-            }
-            Data::Float(value) => {
-                sheet.write_number(i as u32, j as u16, value, None)?;
-            }
-            Data::Text(value) => {
-                sheet.write_string(i as u32, j as u16, value, None)?;
-            }
-        }
-    }
+    // Write some numbers.
+    worksheet.write(2, 0, 1)?;
+    worksheet.write(3, 0, 2.34)?;
 
-    workbook.close()
-}
+    // Write a number with formatting.
+    worksheet.write_with_format(4, 0, 3.00, &decimal_format)?;
 
-fn main() {
-    let index = HashMap::new(); // Example index
-    let array = create_2d_array(index);
-    println!("Mixed 2D array:\n{:?}", array);
+    // Write a formula.
+    worksheet.write(5, 0, Formula::new("=SIN(PI()/4)"))?;
 
-    if let Err(e) = save_to_xlsx(&array, "output.xlsx") {
-        eprintln!("Error saving to xlsx: {}", e);
-    }
+    // Write a date.
+    let date = ExcelDateTime::from_ymd(2023, 1, 25)?;
+    worksheet.write_with_format(6, 0, &date, &date_format)?;
+
+    // Write some links.
+    worksheet.write(7, 0, Url::new("https://www.rust-lang.org"))?;
+    worksheet.write(8, 0, Url::new("https://www.rust-lang.org").set_text("Rust"))?;
+
+    // Write some merged cells.
+    worksheet.merge_range(9, 0, 9, 1, "Merged cells", &merge_format)?;
+
+    // Insert an image.
+    // let image = Image::new("examples/rust_logo.png")?;
+    // worksheet.insert_image(1, 2, &image)?;
+
+    // Save the file to disk.
+    workbook.save("demo.xlsx")?;
+
+    Ok(())
 }

@@ -2,7 +2,6 @@
 use byte::ctx;
 use byte::{BytesExt, TryRead, TryWrite};
 use std::fmt;
-
 use crate::types::*;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -283,10 +282,10 @@ impl fmt::Display for PCR {
         write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
         write!(f, "   PART_CNT [U4] : {}\n", self.part_cnt)?;
-        write!(f, "   RTST_CNT [U4] : {}\n", self.rtst_cnt)?;
-        write!(f, "   ABRT_CNT [U4] : {}\n", self.abrt_cnt)?;
-        write!(f, "   GOOD_CNT [U4] : {}\n", self.good_cnt)?;
-        write!(f, "   FUNC_CNT [U4] : {}\n", self.func_cnt)
+        write!(f, "   RTST_CNT [U4] : {}\n", if u32::from(self.rtst_cnt) == u32::MAX {u32::from(self.rtst_cnt).to_string()} else {"".to_string()})?;
+        write!(f, "   ABRT_CNT [U4] : {}\n", if u32::from(self.abrt_cnt) == u32::MAX {u32::from(self.abrt_cnt).to_string()} else {"".to_string()})?;
+        write!(f, "   GOOD_CNT [U4] : {}\n", if u32::from(self.good_cnt) == u32::MAX {u32::from(self.good_cnt).to_string()} else {"".to_string()})?;
+        write!(f, "   FUNC_CNT [U4] : {}\n", if u32::from(self.func_cnt) == u32::MAX {u32::from(self.func_cnt).to_string()} else {"".to_string()})
     }
 }
 
@@ -1657,7 +1656,7 @@ pub fn is_test(typ:u8) -> bool {
 }
 
 pub fn test_needs_columns(rec: V4) -> u16 {
-
+    0_u16
 }
 
 #[cfg(test)]

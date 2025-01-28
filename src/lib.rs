@@ -5,12 +5,13 @@ extern crate stdf_record_derive;
 
 pub mod records;
 pub mod types;
+pub mod conversions;
+pub mod counts;
 
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Result};
 use byte::ctx::Endian;
-
 
 pub fn mrr_offset_in_file(file: &mut File) -> Option<u64> {
     let endian = match get_endian_from_file(file).unwrap() {
