@@ -33,6 +33,7 @@ stdf
         record -i tests/test_data/test.stdf --offset 12345
         records -i tests/test_data/test.stdf -r FAR MIR ...
         info -i tests/test_data/test.stdf --> mir & sdr
+        index -i tests/test_data/test.stdf 
         length -i tests/test_data/test.stdf --> returns the length of the file
 
     to 

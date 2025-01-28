@@ -1,7 +1,7 @@
 extern crate clap;
 
 use clap::{Arg, Command, crate_version, crate_authors, ArgAction, value_parser};
-use stdf::records::{MRR, PRR, FAR, V4, typ_sub_to_name};
+use stdf::records::{PRR, V4, typ_sub_to_name, is_supported_records};
 use std::{fs::File, io::{Seek, SeekFrom}};
 use std::process;
 use stdf::{get_endian_from_file, get_index_from_file, mrr_offset_in_file};
@@ -9,7 +9,6 @@ use memmap::MmapOptions;
 use byte::BytesExt;
 
 fn main() {
-    println!("Hello, world!");
     let matches = Command::new("stdf")
         .version(crate_version!())
         .author(crate_authors!("\n"))
@@ -256,7 +255,8 @@ fn main() {
                     .short('r')
                     .long("records")
                     .required(false)
-                    .help("Sets the list of records to dump. (see `stdf records` for a valid list of records)`"),
+                    .num_args(1..)
+                    .help("Sets the list of records to dump\n`stdf list records` for a list of valid records\nInvalid records will be ignored"),
                 ),
             )
             .subcommand(Command::new("parts")
@@ -267,6 +267,22 @@ fn main() {
                     .required(true)
                     .help("Sets the input file to use"),
                 )
+            )
+            .subcommand(Command::new("index")
+                .about("Dumps the index of the STDF file.")
+                .arg(Arg::new("input_file")
+                    .short('i')
+                    .long("input_file")
+                    .required(true)
+                    .help("Sets the input file to use"),
+                )
+                .arg(Arg::new("records")
+                    .short('r')
+                    .long("records")
+                    .required(false)
+                    .num_args(1..)
+                    .help("Sets the list of records to dump. (see `stdf records` for a valid list of records)`"),
+                ),
             )
             .subcommand(Command::new("length")
                 .about("Dumps the length of the STDF file.")
@@ -529,6 +545,7 @@ fn main() {
                             process::exit(1);
                         }
                     };
+                    file.seek(SeekFrom::Start(0)).unwrap();
                     let retval = true;
                     //TODO: implement has_mrr_at_end
                     // let retval = match has_mrr_at_end(&mut file){
@@ -573,18 +590,13 @@ fn main() {
                     
                     let mut record_count: u64 = 0;
                     for (key, value) in index.iter() {
-                        match typ_sub_to_name(key.0, key.1) {
-                            "MRR" => {
-                                if sub_sub_m.get_flag("verbose") {
-
-
-
-
-                                    println!("{} : {:>10} -> {:?}", typ_sub_to_name(key.0, key.1), value.len(), value);
-                                }
-                                record_count += value.len() as u64;
-
-                            },
+                        match typ_sub_to_name(key.0, key.1).as_str() {
+                            // "MRR" => {
+                            //     if sub_sub_m.get_flag("verbose") {
+                            //         println!("{} : {:>10} -> {:?}", typ_sub_to_name(key.0, key.1), value.len(), value);
+                            //     }
+                            //     record_count += value.len() as u64;
+                            // },
                             "???" => {
                                 if sub_sub_m.get_flag("verbose") {
                                     println!("{} : ({:>9})", typ_sub_to_name(key.0, key.1), value.len());
@@ -610,13 +622,15 @@ fn main() {
                     let mut file = File::open(input_file).unwrap();
                     let index = get_index_from_file(&mut file).unwrap();
 
-                    let mut part_count: u64 = 0;
-                    for (key, value) in index.iter() {
-                        if (key.0, key.1) == (5, 20) { // PRR
-                            part_count += value.len() as u64;
-                        }
+                    let empty_vec: Vec<u64> = Vec::new();
+                    let part_count_pir = index.get(&(5, 10)).unwrap_or(&empty_vec).len() as u64;
+                    let part_count_prr = index.get(&(5, 20)).unwrap_or(&empty_vec).len() as u64;
+                    if part_count_pir == part_count_prr {
+                        println!("{}", part_count_pir);
+                    } else {
+                        eprintln!("Error: PIR and PRR part count mismatch");
+                        process::exit(1);
                     }
-                    println!("{}", part_count);
                 }
                 Some(("yield", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
@@ -724,43 +738,68 @@ fn main() {
                             process::exit(1);
                         }
                     };
+
+                    let all_records = is_supported_records();
+                    println!("All records = {:?}", all_records);
+
+                    let records_asked_to_dump=sub_sub_m
+                        .get_many::<String>("records")
+                        .map(|vals| vals.map(|s| s.to_string()).collect())
+                        .unwrap_or_else(|| all_records.clone());
+                    println!("Records asked to dump = {:?}", records_asked_to_dump);
+
+                    let records_to_dump: Vec<String> = records_asked_to_dump
+                        .into_iter()
+                        .filter(|record| all_records.contains(record))
+                        .collect();
+                    println!("Records to dump = {:?}", records_to_dump);
+
+                    // TODO: let the user know if there are records that are not supported (and removed form the list)
+                    // let non_existing_records: Vec<String> = records_asked_to_dump
+                    //     .into_iter()
+                    //     .filter(|record| !all_records.contains(record))
+                    //     .collect();
+                    // println!("Non existing records = {:?}", records_asked_to_dump);
+
                     let m = unsafe { MmapOptions::new().map(&input_file).unwrap() };
                     let bytes = &m[..];
                     let offset = &mut 0;
                     loop {
                         match bytes.read_with::<V4>(offset, endian) {
                             Ok(v4) => {
-                                match v4 {
-                                    V4::FAR(record) => println!("{}", record),
-                                    V4::ATR(record) => println!("{}", record),
-                                    V4::MIR(record) => println!("{}", record),
-                                    V4::MRR(record) => println!("{}", record),
-                                    V4::PCR(record) => println!("{}", record),
-                                    V4::HBR(record) => println!("{}", record),
-                                    V4::SBR(record) => println!("{}", record),
-                                    V4::PMR(record) => println!("{}", record),
-                                    V4::PGR(record) => println!("{}", record),
-                                    V4::PLR(record) => println!("{}", record),
-                                    V4::RDR(record) => println!("{}", record),
-                                    V4::SDR(record) => println!("{}", record),
-                                    V4::WIR(record) => println!("{}", record),
-                                    V4::WRR(record) => println!("{}", record),
-                                    V4::WCR(record) => println!("{}", record),
-                                    V4::PIR(record) => println!("{}", record),
-                                    V4::PRR(record) => println!("{}", record),
-                                    V4::TSR(record) => println!("{}", record),
-                                    V4::PTR(record) => println!("{}", record),
-                                    V4::MPR(record) => println!("{}", record),
-                                    V4::FTR(record) => println!("{:?}", record),
-                                    V4::BPS(record) => println!("{}", record),
-                                    V4::EPS(record) => println!("{}", record),
-                                    V4::GDR(record) => println!("{}", record),
-                                    V4::DTR(record) => println!("{}", record),
-                                    _ => println!("???"),
+                                if records_to_dump.contains(&v4.name()) {
+                                    match v4 {
+                                        V4::FAR(record) => println!("{}", record),
+                                        V4::ATR(record) => println!("{}", record),
+                                        V4::MIR(record) => println!("{}", record),
+                                        V4::MRR(record) => println!("{}", record),
+                                        V4::PCR(record) => println!("{}", record),
+                                        V4::HBR(record) => println!("{}", record),
+                                        V4::SBR(record) => println!("{}", record),
+                                        V4::PMR(record) => println!("{}", record),
+                                        V4::PGR(record) => println!("{}", record),
+                                        V4::PLR(record) => println!("{}", record),
+                                        V4::RDR(record) => println!("{}", record),
+                                        V4::SDR(record) => println!("{}", record),
+                                        V4::WIR(record) => println!("{}", record),
+                                        V4::WRR(record) => println!("{}", record),
+                                        V4::WCR(record) => println!("{}", record),
+                                        V4::PIR(record) => println!("{}", record),
+                                        V4::PRR(record) => println!("{}", record),
+                                        V4::TSR(record) => println!("{}", record),
+                                        V4::PTR(record) => println!("{}", record),
+                                        V4::MPR(record) => println!("{}", record),
+                                        V4::FTR(record) => println!("{}", record),
+                                        V4::BPS(record) => println!("{}", record),
+                                        V4::EPS(record) => println!("{}", record),
+                                        V4::GDR(record) => println!("{}", record),
+                                        V4::DTR(record) => println!("{}", record),
+                                        _ => println!("???"),
+                                    }
                                 }
                             },
-                            Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
-                            Err(e) => println!("Error : {:?}", e),
+                            // Err(byte::Error::BadOffset(x)) => println!("Error : bad offset {} before EOF", x),
+                            // Err(e) => println!("Error : {:?}", e),
                             _ => break,
                         };
                     }
@@ -780,6 +819,41 @@ fn main() {
                         }
                     };
                     println!("TO BE IMPLEMENTED {:?}", endian);
+                }
+                Some(("index", sub_sub_m)) => {
+                    let file_name = sub_sub_m.get_one::<String>("input_file").unwrap();
+                    let mut file = File::open(file_name).unwrap();
+
+                    let all_records = is_supported_records();
+                    // println!("All records = {:?}", all_records);
+
+                    let records_asked_to_dump=sub_sub_m
+                        .get_many::<String>("records")
+                        .map(|vals| vals.map(|s| s.to_string()).collect())
+                        .unwrap_or_else(|| all_records.clone());
+                    // println!("Records asked to dump = {:?}", records_asked_to_dump);
+
+                    let records_to_dump: Vec<String> = records_asked_to_dump
+                        .into_iter()
+                        .filter(|record| all_records.contains(record))
+                        .collect();
+                    // println!("Records to dump = {:?}", records_to_dump);
+
+                    // TODO: let the user know if there are records that are not supported (and removed form the list)
+                    // let non_existing_records: Vec<String> = records_asked_to_dump
+                    //     .into_iter()
+                    //     .filter(|record| !all_records.contains(record))
+                    //     .collect();
+                    // println!("Non existing records = {:?}", records_asked_to_dump);
+
+                    let index = get_index_from_file(&mut file).unwrap();
+
+                    for (key, value) in index.iter() {
+                        let record_name  = typ_sub_to_name(key.0, key.1);
+                        if records_to_dump.contains(&record_name) {
+                            println!("{} : {:?}", typ_sub_to_name(key.0, key.1).replace("\"", ""), value);
+                        }
+                    }
                 }
                 Some(("length", sub_sub_m)) => {
                     let input_file_name = sub_sub_m.get_one::<String>("input_file").unwrap();

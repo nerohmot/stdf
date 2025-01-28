@@ -1,7 +1,6 @@
 #![allow(unused_parens)]
 use byte::ctx;
 use byte::{BytesExt, TryRead, TryWrite};
-use std::convert::Infallible;
 use std::fmt;
 
 use crate::types::*;
@@ -64,6 +63,12 @@ pub struct FAR {
     pub stdf_ver: U1,
 }
 
+impl FAR {
+    pub fn name() -> String {
+        "FAR".to_string()
+    }
+}
+
 impl fmt::Display for FAR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "FAR : File Attrubute Record\n")?;
@@ -78,6 +83,12 @@ pub struct ATR<'a> {
     pub mod_tim: U4E,
     #[default(Cn(b""))]
     pub cmd_line: Cn<'a>,
+}
+
+impl ATR<'_> {
+    pub fn name() -> String {
+        "ATR".to_string()
+    }
 }
 
 impl<'a> fmt::Display for ATR<'a> {
@@ -168,6 +179,12 @@ pub struct MIR<'a> {
     pub supr_nam: Cn<'a>,
 }
 
+impl MIR<'_> {
+    pub fn name() -> String {
+        "MIR".to_string()
+    }
+}
+
 impl<'a> fmt::Display for MIR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MIR : Master Information Record\n")?;
@@ -223,6 +240,12 @@ pub struct MRR<'a> {
     pub exc_desc: Cn<'a>,
 }
 
+impl MRR<'_> {
+    pub fn name() -> String {
+        "MRR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for MRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MRR : Master Result Record\n")?;
@@ -246,6 +269,12 @@ pub struct PCR {
     pub good_cnt: U4,
     #[default(U4::from(0xffffffff))]
     pub func_cnt: U4,
+}
+
+impl PCR {
+    pub fn name() -> String {
+        "PCR".to_string()
+    }
 }
 
 impl fmt::Display for PCR {
@@ -273,6 +302,12 @@ pub struct HBR<'a> {
     pub hbin_nam: Cn<'a>,
 }
 
+impl HBR<'_> {
+    pub fn name() -> String {
+        "HBR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for HBR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "HBR : Hard Bin Record\n")?;
@@ -295,6 +330,12 @@ pub struct SBR<'a> {
     pub sbin_pf: C1,
     #[default(Cn(b""))]
     pub sbin_nam: Cn<'a>,
+}
+
+impl SBR<'_> {
+    pub fn name() -> String {
+        "SBR".to_string()
+    }
 }
 
 impl <'a> fmt::Display for SBR<'a> {
@@ -326,6 +367,12 @@ pub struct PMR<'a> {
     pub site_num: U1,
 }
 
+impl PMR<'_> {
+    pub fn name() -> String {
+        "PMR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for PMR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PMR : Pin Map Record\n")?;
@@ -349,6 +396,12 @@ pub struct PGR<'a> {
     #[array_length(indx_cnt)]
     #[array_type(U2)]
     pub pmr_indx: Vec<U2>,
+}
+
+impl PGR<'_> {
+    pub fn name() -> String {
+        "PGR".to_string()
+    }
 }
 
 impl <'a> fmt::Display for PGR<'a> {
@@ -387,6 +440,12 @@ pub struct PLR<'a> {
     pub rtn_chal: Vec<Cn<'a>>,
 }
 
+impl PLR<'_> {
+    pub fn name() -> String {
+        "PLR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for PLR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PLR : Pin List Record\n")?;
@@ -407,6 +466,12 @@ pub struct RDR {
     #[array_length(num_bins)]
     #[array_type(U2)]
     pub rtst_bin: Vec<U2>,
+}
+
+impl RDR {
+    pub fn name() -> String {
+        "RDR".to_string()
+    }
 }
 
 impl fmt::Display for RDR {
@@ -459,6 +524,12 @@ pub struct SDR<'a> {
     pub extr_id: Cn<'a>,
 }
 
+impl SDR<'_> {
+    pub fn name() -> String {
+        "SDR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for SDR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SDR : Site Description Record\n")?;
@@ -493,6 +564,12 @@ pub struct WIR<'a> {
     pub start_t: U4E,
     #[default(Cn(b""))]
     pub wafer_id: Cn<'a>,
+}
+
+impl WIR<'_> {
+    pub fn name() -> String {
+        "WIR".to_string()
+    }
 }
 
 impl <'a> fmt::Display for WIR<'a> {
@@ -532,6 +609,12 @@ pub struct WRR<'a> {
     pub usr_desc: Cn<'a>,
     #[default(Cn(b""))]
     pub exc_desc: Cn<'a>,
+}
+
+impl WRR<'_> {
+    pub fn name() -> String {
+        "WRR".to_string()
+    }
 }
 
 impl <'a> fmt::Display for WRR<'a> {
@@ -576,6 +659,12 @@ pub struct WCR {
     pub pos_y: C1,
 }
 
+impl WCR {
+    pub fn name() -> String {
+        "WCR".to_string()
+    }
+}
+
 impl fmt::Display for WCR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "WCR : Wafer Configuration Record\n")?;
@@ -595,6 +684,12 @@ impl fmt::Display for WCR {
 pub struct PIR {
     pub head_num: U1,
     pub site_num: U1,
+}
+
+impl PIR {
+    pub fn name() -> String {
+        "PIR".to_string()
+    }
 }
 
 impl fmt::Display for PIR {
@@ -628,24 +723,51 @@ pub struct PRR<'a> {
     pub part_fix: Bn<'a>,
 }
 
+impl PRR<'_> {
+    pub fn name() -> String {
+        "PRR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for PRR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PRR : Part Results Record\n")?;
         write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
         write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
-        write!(f, "   PART_FLG [B1] : {}\n", self.part_flg)?;
+        write!(f, "   PART_FLG [B1] : {} {}\n", self.part_flg, prr_part_flg(self.part_flg))?;
         write!(f, "   NUM_TEST [U2] : {}\n", self.num_test)?;
         write!(f, "   HARD_BIN [U2] : {}\n", self.hard_bin)?;
         write!(f, "   SOFT_BIN [U2] : {}\n", self.soft_bin)?;
-        write!(f, "   X_COORD  [I2] : {}\n", self.x_coord)?;
-        write!(f, "   Y_COORD  [I2] : {}\n", self.y_coord)?;
+        write!(f, "   X_COORD  [I2] : {}\n", if i16::from(self.x_coord) == -32768_i16 {"".to_string()} else {format!("{}", i16::from(self.x_coord))})?;
+        write!(f, "   Y_COORD  [I2] : {}\n", if i16::from(self.y_coord) == -32768_i16 {"".to_string()} else {format!("{}", i16::from(self.y_coord))})?;
         write!(f, "   TEST_T   [U4] : {}\n", self.test_t)?;
-        write!(f, "   PART_ID  [Cn] : '{}'\n", self.part_id)?;
-        write!(f, "   PART_TXT [Cn] : '{}'\n", self.part_txt)?;
+        write!(f, "   PART_ID  [Cn] : '{}'\n", self.part_id.to_string().replace("\n", "").replace("\r", ""))?;
+        write!(f, "   PART_TXT [Cn] : '{}'\n", self.part_txt.to_string().replace("\n", "").replace("\r", ""))?;
         write!(f, "   PART_FIX [Bn] : {}\n", self.part_fix)
     }
 }
 
+fn prr_part_flg(part_flg: B1) -> String {
+    let mut msg = String::new();
+    let mut info: Vec<String> = Vec::new(); 
+
+    if u8::from(part_flg) & 0b0000_0100 == 0b0000_0100  { info.push(String::from("Abnormal end of testing")); }
+
+    msg.push_str("(");
+    msg.push_str(&info.join(", "));
+    msg.push_str(") → ");
+
+    if u8::from(part_flg) & 0b0001_0000 == 0b0001_0000  { 
+        msg.push_str("?");
+    } else {
+        if u8::from(part_flg) & 0b0000_1000 == 0b0000_1000 {
+            msg.push_str("FAIL");
+        } else {
+            msg.push_str("PASS");
+        }
+    }
+    msg
+}
 #[derive(Debug, PartialEq, STDFRecord)]
 pub struct TSR<'a> {
     pub head_num: U1,
@@ -675,6 +797,12 @@ pub struct TSR<'a> {
     pub tst_sqrs: R4,
 }
 
+impl TSR<'_> {
+    pub fn name() -> String {
+        "TSR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for TSR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "TSR : Test Synopsis Record\n")?;
@@ -688,12 +816,12 @@ impl <'a> fmt::Display for TSR<'a> {
         write!(f, "   TEST_NAM [Cn] : '{}'\n", self.test_nam)?;
         write!(f, "   SEQ_NAME [Cn] : '{}'\n", self.seq_name)?;
         write!(f, "   TEST_LBL [Cn] : '{}'\n", self.test_lbl)?;
-        write!(f, "   OPT_FLAG [B1] : {}\n", self.opt_flag)?;
-        write!(f, "   TEST_TIM [R4] : {}\n", self.test_tim)?;
-        write!(f, "   TEST_MIN [R4] : {}\n", self.test_min)?;
-        write!(f, "   TEST_MAX [R4] : {}\n", self.test_max)?;
-        write!(f, "   TST_SUMS [R4] : {}\n", self.tst_sums)?;
-        write!(f, "   TST_SQRS [R4] : {}\n", self.tst_sqrs)
+        write!(f, "   OPT_FLAG [B1] : {} (see check marks below)\n", self.opt_flag)?;
+        write!(f, "   TEST_TIM [R4] : {} {}\n", self.test_tim, if u8::from(self.opt_flag) & 0b00000100 == 0b00000100 { "✗" } else { "✓" })?;
+        write!(f, "   TEST_MIN [R4] : {} {}\n", self.test_min, if u8::from(self.opt_flag) & 0b00000001 == 0b00000001 { "✗" } else { "✓" })?;
+        write!(f, "   TEST_MAX [R4] : {} {}\n", self.test_max, if u8::from(self.opt_flag) & 0b00000010 == 0b00000010 { "✗" } else { "✓" })?;
+        write!(f, "   TST_SUMS [R4] : {} {}\n", self.tst_sums, if u8::from(self.opt_flag) & 0b00010000 == 0b00010000 { "✗" } else { "✓" })?;
+        write!(f, "   TST_SQRS [R4] : {} {}\n", self.tst_sqrs, if u8::from(self.opt_flag) & 0b00100000 == 0b00100000 { "✗" } else { "✓" })
     }
 }
 
@@ -734,6 +862,12 @@ pub struct PTR<'a> {
     pub lo_spec: R4,
     #[default(R4::from(std::f32::NAN))]
     pub hi_spec: R4,
+}
+
+impl PTR<'_> {
+    pub fn name() -> String {
+        "PTR".to_string()
+    }
 }
 
 impl <'a> fmt::Display for PTR<'a> {
@@ -887,6 +1021,12 @@ pub struct MPR<'a> {
     pub hi_spec: R4,
 }
 
+impl MPR<'_> {
+    pub fn name() -> String {
+        "MPR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for MPR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "MPR : Multiple-Result Parametric Record\n")?;
@@ -984,6 +1124,12 @@ pub struct FTR<'a> {
     pub spin_map: Dn<'a>,
 }
 
+impl FTR<'_> {
+    pub fn name() -> String {
+        "FTR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for FTR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "FTR : Functional Test Record\n")?;
@@ -1029,6 +1175,12 @@ pub struct BPS<'a> {
     pub seq_name: Cn<'a>,
 }
 
+impl BPS<'_> {
+    pub fn name() -> String {
+        "BPS".to_string()
+    }
+}
+
 impl <'a> fmt::Display for BPS<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "BPS : Begin Program Section record\n")?;
@@ -1038,6 +1190,12 @@ impl <'a> fmt::Display for BPS<'a> {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct EPS;
+
+impl EPS {
+    pub fn name() -> String {
+        "EPS".to_string()
+    }
+}
 
 impl fmt::Display for EPS {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1054,6 +1212,12 @@ pub struct GDR<'a> {
     pub gen_data: Vec<Vn<'a>>,
 }
 
+impl GDR<'_> {
+    pub fn name() -> String {
+        "GDR".to_string()
+    }
+}
+
 impl <'a> fmt::Display for GDR<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "GDR\n")?;
@@ -1066,6 +1230,12 @@ impl <'a> fmt::Display for GDR<'a> {
 pub struct DTR<'a> {
     #[default(Cn(b""))]
     pub text_dat: Cn<'a>,
+}
+
+impl DTR<'_> {
+    pub fn name() -> String {
+        "DTR".to_string()
+    }
 }
 
 impl <'a> fmt::Display for DTR<'a> {
@@ -1115,6 +1285,40 @@ pub enum V4<'a> {
     DTR(DTR<'a>),
     Unknown(Raw<'a>),
     Invalid(Raw<'a>),
+}
+
+impl V4<'_> {
+    pub fn name(&self) -> String {
+        match self {
+            V4::FAR(_) => FAR::name(),
+            V4::ATR(_) => ATR::name(),
+            V4::MIR(_) => MIR::name(),
+            V4::MRR(_) => MRR::name(),
+            V4::PCR(_) => PCR::name(),
+            V4::HBR(_) => HBR::name(),
+            V4::SBR(_) => SBR::name(),
+            V4::PMR(_) => PMR::name(),
+            V4::PGR(_) => PGR::name(),
+            V4::PLR(_) => PLR::name(),
+            V4::RDR(_) => RDR::name(),
+            V4::SDR(_) => SDR::name(),
+            V4::WIR(_) => WIR::name(),
+            V4::WRR(_) => WRR::name(),
+            V4::WCR(_) => WCR::name(),
+            V4::PIR(_) => PIR::name(),
+            V4::PRR(_) => PRR::name(),
+            V4::TSR(_) => TSR::name(),
+            V4::PTR(_) => PTR::name(),
+            V4::MPR(_) => MPR::name(),
+            V4::FTR(_) => FTR::name(),
+            V4::BPS(_) => BPS::name(),
+            V4::EPS(_) => EPS::name(),
+            V4::GDR(_) => GDR::name(),
+            V4::DTR(_) => DTR::name(),
+            V4::Unknown(_) => "???".to_string(),
+            V4::Invalid(_) => "???".to_string()
+        }
+    }
 }
 
 impl<'a> TryRead<'a, ctx::Endian> for V4<'a> {
@@ -1264,6 +1468,38 @@ impl<'a> V4<'a> {
 //     }
 // }
 
+pub fn is_supported_records() -> Vec<String> {
+    vec![
+        "FAR".to_string(),
+        "ATR".to_string(),
+        "MIR".to_string(),
+        "MRR".to_string(),
+        "PCR".to_string(),
+        "HBR".to_string(),
+        "SBR".to_string(),
+        "PMR".to_string(),
+        "PGR".to_string(),
+        "PLR".to_string(),
+        "RDR".to_string(),
+        "SDR".to_string(),
+        "WIR".to_string(),
+        "WRR".to_string(),
+        "WCR".to_string(),
+        "PIR".to_string(),
+        "PRR".to_string(),
+        "TSR".to_string(),
+        "PTR".to_string(),
+        "MPR".to_string(),
+        "FTR".to_string(),
+        "BPS".to_string(),
+        "EPS".to_string(),
+        "GDR".to_string(),
+        "DTR".to_string(),
+    ]
+    
+}
+
+
 //TODO: Document this function ... do we really need this ?!?
 pub fn is_supported_typ_sub(typ_sub: (u8, u8)) -> bool {
     match typ_sub {
@@ -1323,34 +1559,34 @@ pub fn is_supported_typ_sub(typ_sub: (u8, u8)) -> bool {
 /// let unknown_name = typ_sub_to_name(99, 99);
 /// assert_eq!(unknown_name, "Unknown");
 /// ```
-pub fn typ_sub_to_name(typ: u8, sub: u8) -> &'static str {
+pub fn typ_sub_to_name(typ: u8, sub: u8) -> String {
     match (typ, sub) {
-        (0, 10) => "FAR",
-        (0, 20) => "ATR",
-        (1, 10) => "MIR",
-        (1, 20) => "MRR",
-        (1, 30) => "PCR",
-        (1, 40) => "HBR",
-        (1, 50) => "SBR",
-        (1, 60) => "PMR",
-        (1, 62) => "PGR",
-        (1, 63) => "PLR",
-        (1, 70) => "RDR",
-        (1, 80) => "SDR",
-        (2, 10) => "WIR",
-        (2, 20) => "WRR",
-        (2, 30) => "WCR",
-        (5, 10) => "PIR",
-        (5, 20) => "PRR",
-        (10, 30) => "TSR",
-        (15, 10) => "PTR",
-        (15, 15) => "MPR",
-        (15, 20) => "FTR",
-        (20, 10) => "BPS",
-        (20, 20) => "EPS",
-        (50, 10) => "GDR",
-        (50, 30) => "DTR",
-        _ => "???",
+        (0, 10) => String::from("FAR"),
+        (0, 20) => "ATR".to_string(),
+        (1, 10) => "MIR".to_string(),
+        (1, 20) => "MRR".to_string(),
+        (1, 30) => "PCR".to_string(),
+        (1, 40) => "HBR".to_string(),
+        (1, 50) => "SBR".to_string(),
+        (1, 60) => "PMR".to_string(),
+        (1, 62) => "PGR".to_string(),
+        (1, 63) => "PLR".to_string(),
+        (1, 70) => "RDR".to_string(),
+        (1, 80) => "SDR".to_string(),
+        (2, 10) => "WIR".to_string(),
+        (2, 20) => "WRR".to_string(),
+        (2, 30) => "WCR".to_string(),
+        (5, 10) => "PIR".to_string(),
+        (5, 20) => "PRR".to_string(),
+        (10, 30) => "TSR".to_string(),
+        (15, 10) => "PTR".to_string(),
+        (15, 15) => "MPR".to_string(),
+        (15, 20) => "FTR".to_string(),
+        (20, 10) => "BPS".to_string(),
+        (20, 20) => "EPS".to_string(),
+        (50, 10) => "GDR".to_string(),
+        (50, 30) => "DTR".to_string(),
+        _ => "???".to_string(),
     }
 }
 
@@ -1412,6 +1648,17 @@ pub fn name_to_typ_sub(name: &str) -> (u8, u8) {
 
 
 
+pub fn is_test(typ:u8) -> bool {
+    if typ == 15 {
+        true
+    } else {
+        false
+    }
+}
+
+pub fn test_needs_columns(rec: V4) -> u16 {
+
+}
 
 #[cfg(test)]
 mod tests {
