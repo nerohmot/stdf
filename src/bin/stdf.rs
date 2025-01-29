@@ -464,8 +464,13 @@ fn main() {
         Some(("play", sub_m)) => {
             let file_name = sub_m.get_one::<String>("input_file").unwrap().to_string();
             let mut file = File::open(file_name).unwrap();
-            let record_count = count_records(&mut file, true).unwrap();
-            println!("->{}", record_count)
+            match count_records(&mut file, true) {
+                Ok(_) => (),
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    process::exit(1);
+                }
+            }
         }
         Some(("list", sub_m)) => {
             match sub_m.subcommand()    {

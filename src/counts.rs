@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use crate::get_index_from_file;
 use crate::records::typ_sub_to_name;
+use std::io::{Error, ErrorKind};
 
 /// Counts the records in an STDF (Standard Test Data Format) file and optionally prints detailed information.
 ///
@@ -41,7 +42,7 @@ use crate::records::typ_sub_to_name;
 ///     Ok(())
 /// }
 /// ```
-pub fn count_records(file: &mut File, verbose: bool) -> Result<u32> {
+pub fn count_records(file: &mut File, verbose: bool) -> Result<HashMap<String, u32>> {
     let index = get_index_from_file(file)?;
     let mut retval: HashMap<String, u32> = HashMap::new();
     for (key, value) in index.iter(){
@@ -65,11 +66,26 @@ pub fn count_records(file: &mut File, verbose: bool) -> Result<u32> {
     if verbose {
         println!("    + -----------");
         println!("TTL : {:>10}", record_count);
-    } else {
-        println!("{}", record_count);
-    }
-    Ok(record_count)
+    } 
+    Ok(retval)
 }
 
-
+pub fn count_parts(file: &mut File) -> Result<u32> {
+    let index = get_index_from_file(file)?;
+    let mut records_count: HashMap<String, u32> = HashMap::new();
+    for (key, value) in index.iter(){
+        let new_key = typ_sub_to_name(key.0, key.1).clone();
+        let new_val = value.len() as u32;
+        records_count.insert(new_key, new_val);
+    }
+    let pir_count = records_count.get("PIR").unwrap_or(&0);
+    let prr_count = records_count.get("PRR").unwrap_or(&0);
+    if *pir_count == 0 || *prr_count == 0 {
+        return Err(Error::new(ErrorKind::InvalidData, "Missing PIR or PRR records"));
+    }
+    if pir_count != prr_count {
+        return Err(Error::new(ErrorKind::InvalidData, "Mismatched PIR and PRR records"));
+    }
+    Ok(*pir_count)
+}
 
