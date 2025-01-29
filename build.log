@@ -1,8 +1,0 @@
-warning: no edition set: defaulting to the 2015 edition while the latest is 2021
-   Compiling stdf v0.2.0 (/mnt/c/Users/thor/repos/nerohmot/stdf)
-error: can't use a procedural macro from the same crate that defines it
-  --> src/records.rs:60:32
-   |
-60 | #[derive(Debug, Eq, PartialEq, STDFRecord)]
-   |                                ^^^^^^^^^^
-

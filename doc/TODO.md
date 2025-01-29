@@ -13,16 +13,18 @@ stdf
     duplicate
 
     is
-        ws -i tests/test_data/test.stdf
-        ft -i tests/test_data/test.stdf
-        be -i tests/test_data/test.stdf
-        le -i tests/test_data/test.stdf
-        clean -i tests/test_data/test.stdf --> ends with MRR
+        ws -i tests/test_data/test.stdf -v
+        ft -i tests/test_data/test.stdf -v
+        be -i tests/test_data/test.stdf -v
+        le -i tests/test_data/test.stdf -v
+        clean -i tests/test_data/test.stdf -v --> ends with MRR
         finished
+        terminated
         retest -i tests/test_data/test.stdf
         concatenable -i file1.stdf -i file2.stdf
 
     count 
+    tally
         records -i tests/test_data/test.stdf -v 
         parts -i tests/test_data/test.stdf
         yield -i tests/test_data/test.stdf 
@@ -62,7 +64,9 @@ stdf
                                          --xz -p
                                          --bzip2 -p
                                          --lz4 -p
-                                         --zst -p
+                                         --zst -p ---> zstd crate
+                                         --7z -p ---> sevenz_rust crate
+                                         --lz4 -p ---> 
 
 
     inflate -i tests/test_data/test.stdf.gzip -p
