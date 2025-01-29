@@ -21,3 +21,7 @@ rust_xlsxwriter = "0.81.0"
 
 [dev-dependencies]
 tempfile = "3.2"
+
+[[bin]]
+name = "hvcl_tc"
+path = "src/bin/hvcl_tc.rs"
