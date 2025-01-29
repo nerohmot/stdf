@@ -43,6 +43,7 @@ stdf
         le -i tests/test_data/test.stdf (-o ...) -p
         npy -i tests/test_data/test.stdf (-o ...) -p
         hdf5 -i tests/test_data/test.stdf (-o ...) -p
+        atdf -i tests/files/test.stdf (-o ...) -p
 
     strip -i tests/test_data/test.stdf (-o ...) --atr --dtr --gdr --pcr --sbr --hbr --id
 
