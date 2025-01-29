@@ -6,7 +6,7 @@ extern crate stdf_record_derive;
 pub mod records;
 pub mod types;
 pub mod conversions;
-pub mod counts;
+pub mod tally;
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -92,7 +92,7 @@ pub fn mrr_offset_in_file(file: &mut File) -> Option<u64> {
 ///     Ok(())
 /// }
 /// ```
-pub fn get_index_from_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec<u64>>> {
+pub fn get_index_from_stdf_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec<u64>>> {
     let mut index = HashMap::new();
     let endian = get_endian_from_file(file)?;
     if endian.is_none() {

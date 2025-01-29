@@ -17,10 +17,20 @@ indicatif = "0.17.11"
 regex = "1.11"
 chrono = "0.4"
 ndarray = "0.16"
+
 rust_xlsxwriter = "0.81.0"
-# sevenz-rust = "0.4"   # 7z compression/decompression
-# zstd = "0.9"          # zstd compression/decompression
-# lz4 = "1.0"           # lz4 compression/decompression
+npy = "0.4"
+npy-derive = "0.4"
+
+#sevenz-rust = "0.4"   # 7z compression/decompression
+#zstd = "0.9"          # zstd compression/decompression
+#lz4 = "1.0"           # lz4 compression/decompression
+#flate2 = "1.0"        # gzip compression/decompression
+#xz2 = "0.1"           # xz/lzma compression/decompression
+#zip = "2.2"           # zip/zstd/bz2 compression/decompression
+
+#atty = "0.2"          # detect if a cli tool is running in a terminal or in a script or redirected.
+#filemagic = "0.13"    # detect file type
 
 [dev-dependencies]
 tempfile = "3.2"

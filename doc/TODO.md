@@ -1,5 +1,5 @@
 make a better .gitignore
-
+have a look at [rust-stdf](https://github.com/noonchen/rust-stdf/tree/main)
 
 stdf 
     endian -i tests/test_data/test.stdf
@@ -11,6 +11,7 @@ stdf
 
     create -i tests/test_data/test.stdf -o ... (-t 3.14 -p) 
     duplicate
+    generate
 
     is
         ws -i tests/test_data/test.stdf -v
@@ -49,6 +50,7 @@ stdf
         npy -i tests/test_data/test.stdf (-o ...) -p
         hdf5 -i tests/test_data/test.stdf (-o ...) -p
         atdf -i tests/files/test.stdf (-o ...) -p
+        metis -i tests/files/test.stdf -p 
 
     strip -i tests/test_data/test.stdf (-o ...) --atr --dtr --gdr --pcr --sbr --hbr --id
 
@@ -62,11 +64,12 @@ stdf
                                          --lzma -p
                                          --zip -p
                                          --xz -p
-                                         --bzip2 -p
+                                         --bz2 -p
                                          --lz4 -p
                                          --zst -p ---> zstd crate
                                          --7z -p ---> sevenz_rust crate
-                                         --lz4 -p ---> 
 
 
     inflate -i tests/test_data/test.stdf.gzip -p
+
+    analyze -i tests/files/test.std (-o ...) -p 

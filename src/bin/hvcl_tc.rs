@@ -5,7 +5,7 @@ use std::process;
 
 use stdf::records::V4;
 use stdf::get_endian_from_file;
-use stdf::counts::{count_parts, count_records};
+use stdf::tally::{count_parts, count_records};
 
 use memmap::MmapOptions;
 use byte::BytesExt;
@@ -107,14 +107,7 @@ fn main() {
     let offset = &mut 0;
  
     let pb = ProgressBar::new(part_count as u64 * 301_u64);
-    pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-        .unwrap()
-        // .progress_chars("#>-")
-    );
-    // pb.set_style(ProgressStyle::default_bar()
-    //     .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
-        // .progress_chars("#>-")
-    // );
+    pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}").unwrap());
 
     let mut loop_map: HashMap<u8, u16> = (1..=8).map(|key| (key, 0)).collect();
     loop {

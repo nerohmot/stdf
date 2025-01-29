@@ -6,9 +6,9 @@ use stdf::records::{PRR, V4, typ_sub_to_name, is_supported_records};
 use std::{fs::File, io::{Seek, SeekFrom}};
 use std::process;
 
-use stdf::{get_endian_from_file, get_index_from_file, mrr_offset_in_file};
-use stdf::conversions::dummy_function;
-use stdf::counts::count_records;
+use stdf::{get_endian_from_file, get_index_from_stdf_file, mrr_offset_in_file};
+// use stdf::conversions::dummy_function;
+use stdf::tally::count_records;
 
 use memmap::MmapOptions;
 use byte::BytesExt;
@@ -591,7 +591,7 @@ fn main() {
                 Some(("records", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
                     let mut file = File::open(input_file).unwrap();
-                    let index = get_index_from_file(&mut file).unwrap();
+                    let index = get_index_from_stdf_file(&mut file).unwrap();
                     
                     let mut record_count: u64 = 0;
                     for (key, value) in index.iter() {
@@ -625,7 +625,7 @@ fn main() {
                 Some(("parts", sub_sub_m)) => {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
                     let mut file = File::open(input_file).unwrap();
-                    let index = get_index_from_file(&mut file).unwrap();
+                    let index = get_index_from_stdf_file(&mut file).unwrap();
 
                     let empty_vec: Vec<u64> = Vec::new();
                     let part_count_pir = index.get(&(5, 10)).unwrap_or(&empty_vec).len() as u64;
@@ -641,7 +641,7 @@ fn main() {
                     let input_file = sub_sub_m.get_one::<String>("input_file").unwrap();
                     let mut file = File::open(input_file).unwrap();
                     let endian = get_endian_from_file(&mut file).unwrap().unwrap();
-                    let index = get_index_from_file(&mut file).unwrap();
+                    let index = get_index_from_stdf_file(&mut file).unwrap();
                     
                     let m = unsafe { MmapOptions::new().map(&file).unwrap() };
                     let bytes = &m[..];
@@ -851,7 +851,7 @@ fn main() {
                     //     .collect();
                     // println!("Non existing records = {:?}", records_asked_to_dump);
 
-                    let index = get_index_from_file(&mut file).unwrap();
+                    let index = get_index_from_stdf_file(&mut file).unwrap();
 
                     for (key, value) in index.iter() {
                         let record_name  = typ_sub_to_name(key.0, key.1);
@@ -891,7 +891,6 @@ fn main() {
                     let output_file = sub_sub_m.get_one::<String>("output_file").unwrap_or(&default_output_file);
                     println!("Converting the STDF file '{}' to XLSX file '{}'", input_file, output_file);
                     // Add your logic for the "xlsx" subcommand here
-                    let a = dummy_function();
                 }
                 _ => eprintln!("No valid subcommand was used for convert_to"),
             }
