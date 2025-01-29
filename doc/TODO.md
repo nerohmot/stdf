@@ -13,6 +13,8 @@ stdf
     duplicate
     generate
 
+    anonymize -i test/files/test.stdf -d --> delete original afterwards
+
     is
         ws -i tests/test_data/test.stdf -v
         ft -i tests/test_data/test.stdf -v
@@ -21,6 +23,7 @@ stdf
         clean -i tests/test_data/test.stdf -v --> ends with MRR
         finished
         terminated
+        ready
         retest -i tests/test_data/test.stdf
         concatenable -i file1.stdf -i file2.stdf
 
@@ -32,6 +35,7 @@ stdf
         tests -i tests/test_data/test.stdf -v
         sites -i tests/test_data/test.stdf
         heads -i tests/test_data/test.stdf
+        parallelism -i tests/files/test.stdf 
         sbin -i tests/test_data/test.stdf -v
         hbin -i tests/test_data/test.stdf -v
 

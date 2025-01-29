@@ -30,7 +30,7 @@ npy-derive = "0.4"
 #zip = "2.2"           # zip/zstd/bz2 compression/decompression
 
 #atty = "0.2"          # detect if a cli tool is running in a terminal or in a script or redirected.
-#filemagic = "0.13"    # detect file type
+filemagic = { version = "0.13.1", features = ["vendored"] }    # detect file type
 
 [dev-dependencies]
 tempfile = "3.2"

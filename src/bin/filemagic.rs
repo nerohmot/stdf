@@ -1,0 +1,33 @@
+use clap::{Arg, Command};
+use filemagic::Magic;
+
+fn main() {
+    // Define the command-line arguments using clap
+    let matches = Command::new("filemagic_demo")
+        .version("0.1.0")
+        .author("Your Name <your.email@example.com>")
+        .about("Determines the type of a file based on its magic numbers")
+        .arg(
+            Arg::new("input_file")
+                .short('i')
+                .long("input")
+                .required(true)
+                .takes_value(true)
+                .help("Sets the input file to use"),
+        )
+        .get_matches();
+
+    // Get the input file path from the command-line arguments
+    let file_path = matches.get_one::<String>("input_file").unwrap();
+
+    // Create a new Magic instance
+    let magic = Magic::open(filemagic::flags::MIME_TYPE).expect("Unable to initialize libmagic");
+
+    // Load the default magic database
+    magic.load(&["tests/files/magic.mgc"]).expect("Unable to load magic database");
+
+    // Get the MIME type of the file
+    let mime_type = magic.file(file_path).expect("Unable to get file type");
+
+    println!("The MIME type of the file is: {}", mime_type);
+}
