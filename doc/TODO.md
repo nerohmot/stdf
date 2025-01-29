@@ -1,3 +1,6 @@
+make a better .gitignore
+
+
 stdf 
     endian -i tests/test_data/test.stdf
 
