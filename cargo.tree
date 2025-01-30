@@ -1,0 +1,114 @@
+stdf v0.0.0 (/mnt/c/Users/hoeren/Desktop/Repos/nerohmot/stdf)
+├── byte v0.2.7
+├── cc v1.2.10
+│   └── shlex v1.3.0
+├── chrono v0.4.39
+│   ├── iana-time-zone v0.1.61
+│   └── num-traits v0.2.19
+│       [build-dependencies]
+│       └── autocfg v1.4.0
+├── clap v4.5.27
+│   └── clap_builder v4.5.27
+│       ├── anstream v0.6.18
+│       │   ├── anstyle v1.0.10
+│       │   ├── anstyle-parse v0.2.6
+│       │   │   └── utf8parse v0.2.2
+│       │   ├── anstyle-query v1.1.2
+│       │   ├── colorchoice v1.0.3
+│       │   ├── is_terminal_polyfill v1.70.1
+│       │   └── utf8parse v0.2.2
+│       ├── anstyle v1.0.10
+│       ├── clap_lex v0.7.4
+│       └── strsim v0.11.1
+├── filemagic v0.13.1
+│   ├── bitflags v2.8.0
+│   └── libc v0.2.169
+│   [build-dependencies]
+│   ├── cc v1.2.10 (*)
+│   ├── pkg-config v0.3.31
+│   └── vcpkg v0.2.15
+├── indicatif v0.17.11
+│   ├── console v0.15.10
+│   │   ├── libc v0.2.169
+│   │   ├── once_cell v1.20.2
+│   │   └── unicode-width v0.2.0
+│   ├── number_prefix v0.4.0
+│   ├── portable-atomic v1.10.0
+│   └── unicode-width v0.2.0
+├── memmap v0.7.0
+│   └── libc v0.2.169
+├── ndarray v0.16.1
+│   ├── matrixmultiply v0.3.9
+│   │   └── rawpointer v0.2.1
+│   │   [build-dependencies]
+│   │   └── autocfg v1.4.0
+│   ├── num-complex v0.4.6
+│   │   └── num-traits v0.2.19 (*)
+│   ├── num-integer v0.1.46
+│   │   └── num-traits v0.2.19 (*)
+│   ├── num-traits v0.2.19 (*)
+│   └── rawpointer v0.2.1
+├── npy v0.4.0
+│   ├── byteorder v1.5.0
+│   └── nom v3.2.1
+│       └── memchr v1.0.2
+│           └── libc v0.2.169
+├── npy-derive v0.4.0 (proc-macro)
+│   ├── quote v0.4.2
+│   │   └── proc-macro2 v0.2.3
+│   │       └── unicode-xid v0.1.0
+│   └── syn v0.12.15
+│       ├── proc-macro2 v0.2.3 (*)
+│       ├── quote v0.4.2 (*)
+│       └── unicode-xid v0.1.0
+├── rust_xlsxwriter v0.81.0
+│   └── zip v2.2.2
+│       ├── crc32fast v1.4.2
+│       │   └── cfg-if v1.0.0
+│       ├── displaydoc v0.2.5 (proc-macro)
+│       │   ├── proc-macro2 v1.0.93
+│       │   │   └── unicode-ident v1.0.15
+│       │   ├── quote v1.0.38
+│       │   │   └── proc-macro2 v1.0.93 (*)
+│       │   └── syn v2.0.96
+│       │       ├── proc-macro2 v1.0.93 (*)
+│       │       ├── quote v1.0.38 (*)
+│       │       └── unicode-ident v1.0.15
+│       ├── flate2 v1.0.35
+│       │   ├── crc32fast v1.4.2 (*)
+│       │   └── miniz_oxide v0.8.3
+│       │       └── adler2 v2.0.0
+│       ├── indexmap v2.7.1
+│       │   ├── equivalent v1.0.1
+│       │   └── hashbrown v0.15.2
+│       ├── memchr v2.7.4
+│       ├── thiserror v2.0.11
+│       │   └── thiserror-impl v2.0.11 (proc-macro)
+│       │       ├── proc-macro2 v1.0.93 (*)
+│       │       ├── quote v1.0.38 (*)
+│       │       └── syn v2.0.96 (*)
+│       └── zopfli v0.8.1
+│           ├── bumpalo v3.16.0
+│           ├── crc32fast v1.4.2 (*)
+│           ├── lockfree-object-pool v0.1.6
+│           ├── log v0.4.25
+│           ├── once_cell v1.20.2
+│           └── simd-adler32 v0.3.7
+└── stdf-record-derive v0.2.0 (proc-macro) (/mnt/c/Users/hoeren/Desktop/Repos/nerohmot/stdf/stdf-record-derive)
+    ├── proc-macro2 v1.0.93 (*)
+    ├── quote v1.0.38 (*)
+    └── syn v1.0.109
+        ├── proc-macro2 v1.0.93 (*)
+        ├── quote v1.0.38 (*)
+        └── unicode-ident v1.0.15
+[dev-dependencies]
+└── tempfile v3.15.0
+    ├── cfg-if v1.0.0
+    ├── fastrand v2.3.0
+    ├── getrandom v0.2.15
+    │   ├── cfg-if v1.0.0
+    │   └── libc v0.2.169
+    ├── once_cell v1.20.2
+    └── rustix v0.38.44
+        ├── bitflags v2.8.0
+        └── linux-raw-sys v0.4.15

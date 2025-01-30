@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>myproject</id>
+    <version>1.0.0</version>
+    <title>My Project</title>
+    <authors>Your Name</authors>
+    <owners>Your Name</owners>
+    <description>A brief description of your project.</description>
+    <releaseNotes>Initial release.</releaseNotes>
+    <tags>rust cli tool</tags>
+    <licenseUrl>https://opensource.org/licenses/Apache-2.0</licenseUrl>
+    <projectUrl>https://github.com/yourusername/myproject</projectUrl>
+    <iconUrl>https://example.com/icon.png</iconUrl>
+  </metadata>
+  <files>
+    <file src="tools\myproject.exe" target="tools\myproject.exe" />
+  </files>
+</package>
