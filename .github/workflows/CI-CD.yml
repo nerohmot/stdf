@@ -43,6 +43,20 @@ jobs:
   #         token: ${{ secrets.GITHUB_TOKEN }}
   #         args: --all-features
 
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Run tests
+        run: cargo test
+
   build:
     runs-on: ${{ matrix.os }}
     needs: lint
