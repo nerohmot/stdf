@@ -4,6 +4,15 @@ use byte::{BytesExt, TryRead, TryWrite};
 use std::fmt;
 use crate::types::*;
 
+trait IsTestRecord {
+    fn is_test_record(&self) -> bool;
+}
+
+// trait Atdf {
+//     fn to_atdf(&self) -> String;
+// }
+
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct Header {
     pub rec_len: U2,
@@ -56,6 +65,39 @@ impl Header {
     }
 }
 
+macro_rules! is_test_record {
+    ($($struct_name:ident),*; $id:expr) => {
+        $(
+            impl IsTestRecord for $struct_name {
+                fn is_test_record(&self) -> bool {
+                    $id
+                }
+            }
+        )*
+    };
+}
+
+// macro_rules! record_naming! {
+//     ($($struct_name:ident),*) => {
+//         $(
+//             impl $struct_name {
+//                 pub fn name() -> String {
+//                     stringify!($struct_name).to_string()
+//                 }
+//             }
+//         )*
+//     };
+// }
+
+// impl Atdf for FAR {
+//     fn to_atdf(&self) {
+//         let mut retval = String::from("FAR:");
+//TODO: how do I iterate over the struct elements ?!?
+//         write!()
+//         println!("ATDF: FAR");
+//     }
+// }
+
 #[derive(Debug, Eq, PartialEq, STDFRecord)]
 pub struct FAR {
     pub cpu_type: U1,
@@ -67,6 +109,8 @@ impl FAR {
         "FAR".to_string()
     }
 }
+
+is_test_record!(FAR; false);
 
 impl fmt::Display for FAR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1647,16 +1691,12 @@ pub fn name_to_typ_sub(name: &str) -> (u8, u8) {
 
 
 
-pub fn is_test(typ:u8) -> bool {
+pub fn is_test_record(typ:u8) -> bool {
     if typ == 15 {
         true
     } else {
         false
     }
-}
-
-pub fn test_needs_columns(rec: V4) -> u16 {
-    0_u16
 }
 
 #[cfg(test)]

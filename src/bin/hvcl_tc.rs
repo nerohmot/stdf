@@ -60,7 +60,7 @@ fn main() {
         }
     }
 
-    let records = match count_records(&mut file, false) {
+    match count_records(&mut file, false) {
         Ok(records) => records,
         Err(err) => {
             eprintln!("Error counting records: {}", err);
