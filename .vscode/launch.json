@@ -76,7 +76,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["is clean", "-i", "tests/test_data/far.std"],
+            "args": ["is clean", "-i", "tests/fixtures/far.std"],
             "cwd": "${workspaceFolder}"
         },
         {

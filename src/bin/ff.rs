@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let file_path = "tests/files/diamond07_1_3855_rev_F3E_M_Default_01_07122011_155821.std.7z";
+    let file_path = "tests/fixtures/diamond07_1_3855_rev_F3E_M_Default_01_07122011_155821.std.7z";
 
     // Check if the file exists
     if !Path::new(file_path).exists() {

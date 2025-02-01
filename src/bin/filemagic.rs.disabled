@@ -24,7 +24,7 @@ fn main() {
     let magic = Magic::open(filemagic::flags::MIME_TYPE).expect("Unable to initialize libmagic");
 
     // Load the default magic database
-    magic.load(&["tests/files/magic.mgc"]).expect("Unable to load magic database");
+    magic.load(&["tests/fixtures/magic.mgc"]).expect("Unable to load magic database");
 
     // Get the MIME type of the file
     let mime_type = magic.file(file_path).expect("Unable to get file type");

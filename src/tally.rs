@@ -33,10 +33,10 @@ use std::io::{Error, ErrorKind};
 /// use std::fs::File;
 /// use std::io::Result;
 /// 
-/// use stdf::counts::count_records;
+/// use stdf::tally::count_records;
 ///
 /// fn main() -> Result<()> {
-///     let mut file = File::open("tests/files/test.stdf")?;
+///     let mut file = File::open("tests/fixtures/test.stdf")?;
 ///     let record_count = count_records(&mut file, false)?;
 ///     println!("Total record count: {:?}", record_count);
 ///     Ok(())
