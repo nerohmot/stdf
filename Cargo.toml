@@ -58,3 +58,9 @@ license-file = ["LICENSE"]
 assets = [
     ["target/release/hvcl_tc", "usr/bin/"]
 ]
+
+[package.metadata.wix]
+# Optional metadata for the MSI package
+description = "A brief description of your project"
+homepage = "https://example.com"
+license-file = ["LICENSE"]
