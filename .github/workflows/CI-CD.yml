@@ -43,8 +43,14 @@ jobs:
   #         token: ${{ secrets.GITHUB_TOKEN }}
   #         args: --all-features
 
-  check:
-    runs-on: windows-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    # needs: lint
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -52,38 +58,18 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
+
+      - name: Build
+        run: cargo build --release
 
       - name: Run tests
-        run: cargo test
+        run: cargo test --release
 
-  # build:
-  #   runs-on: ${{ matrix.os }}
-  #   # needs: lint
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest, windows-latest]
-  #       rust: [stable]
-
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2
-
-  #     - name: Install Rust
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: ${{ matrix.rust }}
-
-  #     - name: Build
-  #       run: cargo build --release
-
-  #     - name: Run tests
-  #       run: cargo test --release
-
-  #     - name: Upload artifacts
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: myproject
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: myproject
 
   # package:
 
