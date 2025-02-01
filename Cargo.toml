@@ -30,8 +30,14 @@ rust_xlsxwriter = "0.81.0"
 #zip = "2.2"           # zip/zstd/bz2 compression/decompression
 
 #atty = "0.2"          # detect if a cli tool is running in a terminal or in a script or redirected.
-#filemagic = { version = "0.13", features = ["vendored"] }    # detect file type
-#cc = "1.2.10"
+file-format = "0.26.0"
+
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
+serde_json = "1.0.138"
+
+#polars = "0.46.0"
+#umya-spreadsheet = "2.2.2"
 
 [dev-dependencies]
 tempfile = "3.2"
