@@ -52,7 +52,6 @@ path = "src/bin/stdf.rs"
 
 [package.metadata.deb]
 maintainer = "Casey Marshall <git@cmars.tech>, Tom Hören <thor@Semi-ATE.com>"
-description = "HVCL Temperature Check Tool"
 depends = "libc6 (>= 2.27)"
 license-file = ["LICENSE"]
 assets = [
