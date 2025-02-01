@@ -1600,11 +1600,11 @@ pub fn is_supported_typ_sub(typ_sub: (u8, u8)) -> bool {
 /// assert_eq!(name, "MIR");
 ///
 /// let unknown_name = typ_sub_to_name(99, 99);
-/// assert_eq!(unknown_name, "Unknown");
+/// assert_eq!(unknown_name, "???");
 /// ```
 pub fn typ_sub_to_name(typ: u8, sub: u8) -> String {
     match (typ, sub) {
-        (0, 10) => String::from("FAR"),
+        (0, 10) => "FAR".to_string(),
         (0, 20) => "ATR".to_string(),
         (1, 10) => "MIR".to_string(),
         (1, 20) => "MRR".to_string(),
