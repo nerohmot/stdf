@@ -67,9 +67,11 @@ jobs:
         run: cargo test --release
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: myproject
+          name: stdf
+          path: target/release/**/*
+          retention-days: 1
 
   # package:
 
