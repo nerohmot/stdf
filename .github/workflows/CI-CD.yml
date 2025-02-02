@@ -50,6 +50,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         rust: [stable]
+        arch: [x64, arm64]
 
     steps:
       - name: Checkout code
@@ -59,12 +60,13 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.arch }}
 
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target ${{ matrix.arch }}
 
       - name: Run tests
-        run: cargo test --release
+        run: cargo test --release --target ${{ matrix.arch }}
 
       - name: Install WiX Toolset on Windows
         if: matrix.os == 'windows-latest'
@@ -105,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-deb
-          path: target/debian/*.deb
+          path: target/debian/**/*
           retention-days: 1
 
   # package:
@@ -117,22 +119,3 @@ jobs:
   #   if: github.event_name == 'release' && github.event.action == 'published'
   #   steps:
   #     - uses: actions/checkout@v2
-
-  #     - name: Install Rust
-  #       uses: actions-rs/toolchain@v1
-  #       with:
-  #         toolchain: stable
-
-  #     - name: Build
-  #       run: cargo build --release
-
-  #     - name: Deploy to Production
-  #       env:
-  #         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-  #         SERVER: ${{ secrets.SERVER }}
-  #         USER: ${{ secrets.USER }}
-  #       run: |
-  #         echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
-  #         ssh -o StrictHostKeyChecking=no $USER@$SERVER "mkdir -p ~/deployments/myproject"
-  #         scp target/release/myproject $USER@$SERVER:~/deployments/myproject/
-  #         ssh $USER@$SERVER "sudo systemctl restart myproject"
