@@ -3,3 +3,4 @@
 Cargo.lock
 .*.swp
 stdf-record-derive/target
+.vscode/

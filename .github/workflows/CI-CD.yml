@@ -94,6 +94,12 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: cargo deb
 
+      - name: Show target directory contents
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get install -y tree
+          tree target
+
       - name: Upload debian artifacts on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
