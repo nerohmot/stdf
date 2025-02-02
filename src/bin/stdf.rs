@@ -6,7 +6,7 @@ use stdf::records::{PRR, V4, typ_sub_to_name, is_supported_records};
 use std::{fs::File, io::{Seek, SeekFrom}};
 use std::process;
 
-use stdf::{get_endian_from_file, get_index_from_stdf_file, mrr_offset_in_file};
+use stdf::{get_endian_from_file, get_index_from_stdf_file};
 // use stdf::conversions::dummy_function;
 use stdf::tally::count_records;
 
@@ -718,7 +718,7 @@ fn main() {
                             process::exit(1);
                         }
                     };
-                    let current_position = input_file.seek(SeekFrom::Current(0)).unwrap();
+                    let current_position = input_file.stream_position().unwrap();
                     let m = unsafe { MmapOptions::new().map(&input_file).unwrap() };
                     let bytes = &m[..];
                     let offset_u64 = sub_sub_m.get_one::<u64>("offset").unwrap();

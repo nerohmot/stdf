@@ -25,14 +25,21 @@ fn main() -> io::Result<()> {
     let file_path = "path/to/your/file.txt";
     let buffer_size = 1024; // Read in chunks of 1024 bytes
 
-    let mut chunk_reader = StdfReader::new(file_path, buffer_size)?;
+    let mut stdf_reader = StdfReader::new(file_path, buffer_size)?;
 
     loop {
-        let chunk = chunk_reader.read_record()?;
-        if chunk.is_empty() {
-            break;
+        match stdf_reader.read_record() {
+            Ok(record) => {
+                if record.is_empty() {
+                    break;
+                }
+                println!("record: {:?}", record);
+            }
+            Err(err) => {
+                eprintln!("Error reading record: {}", err);
+                break;
+            }
         }
-        println!("Read chunk: {:?}", chunk);
     }
 
     Ok(())

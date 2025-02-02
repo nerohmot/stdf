@@ -3,15 +3,25 @@ use byte::ctx;
 use byte::{BytesExt, TryRead, TryWrite};
 use std::fmt;
 use crate::types::*;
+use serde::Serialize;
+use serde_json;
 
-trait IsTestRecord {
+pub trait IsTestRecord {
     fn is_test_record(&self) -> bool;
+    fn get_name_as_string(&self) -> String;
 }
 
-// trait Atdf {
-//     fn to_atdf(&self) -> String;
-// }
+pub trait Atdf {
+    fn to_atdf(&self) -> String;
+}
 
+// pub struct Vec<U2>;
+
+// impl std::fmt::Display for Vec<U2> {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         write!(f, "{:?}", self.  .0.iter().map(|x| x.to_string()).collect::<Vec<String>>())
+//     }
+// }
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Header {
@@ -34,7 +44,7 @@ impl<'a> TryRead<'a, ctx::Endian> for Header {
     }
 }
 
-impl<'a> TryWrite<ctx::Endian> for Header {
+impl TryWrite<ctx::Endian> for Header {
     fn try_write(self, bytes: &mut [u8], endian: ctx::Endian) -> byte::Result<usize> {
         let offset = &mut 0;
         bytes.write_with::<U2>(offset, self.rec_len, endian)?;
@@ -65,62 +75,64 @@ impl Header {
     }
 }
 
-macro_rules! is_test_record {
-    ($($struct_name:ident),*; $id:expr) => {
-        $(
-            impl IsTestRecord for $struct_name {
-                fn is_test_record(&self) -> bool {
-                    $id
-                }
+//TODO: move this declarative macro to the STDFRecord derive macro
+macro_rules! record_id {
+    ($record_name:ident, $test_type:expr, $($lt:lifetime)?) => {
+        impl IsTestRecord for $record_name<$($lt)?> {
+            fn is_test_record(&self) -> bool {
+                $test_type
             }
-        )*
+            fn get_name_as_string(&self) -> String {
+                stringify!($record_name).to_string()
+            }
+        }
     };
 }
 
-// macro_rules! record_naming! {
-//     ($($struct_name:ident),*) => {
-//         $(
-//             impl $struct_name {
-//                 pub fn name() -> String {
-//                     stringify!($struct_name).to_string()
-//                 }
-//             }
-//         )*
-//     };
-// }
+//TODO: move this declarative macro to the STDFRecord derive macro
+macro_rules! atdf {
+    ($record_name:ident, $($lt:lifetime)?) => {
+        impl Atdf for $record_name<$($lt)?> {
+            fn to_atdf(&self) -> String {
+                let serialized = serde_json::to_string(self).unwrap();
+                let json: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+                if let serde_json::Value::Object(map) = json {
+                    let result = map.values()
+                        .map(|value| format!("{}", value))
+                        .collect::<Vec<String>>()
+                        .join("|");
+                    return format!("{}\n", result.replace("\"", ""));
+                }
+                String::new() // fallback
+            }
+        }
+    };
+}
 
-// impl Atdf for FAR {
-//     fn to_atdf(&self) {
-//         let mut retval = String::from("FAR:");
-//TODO: how do I iterate over the struct elements ?!?
-//         write!()
-//         println!("ATDF: FAR");
-//     }
-// }
-
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// FAR : File Attribute Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct FAR {
     pub cpu_type: U1,
     pub stdf_ver: U1,
 }
 
-impl FAR {
-    pub fn name() -> String {
-        "FAR".to_string()
-    }
-}
-
-is_test_record!(FAR; false);
+record_id!(FAR, false,  );
+atdf!(FAR,);
 
 impl fmt::Display for FAR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FAR : File Attrubute Record\n")?;
-        write!(f, "   CPU_TYPE [U1] : {}\n", self.cpu_type)?;
-        write!(f, "   STDF_VER [U1] : {}\n", self.stdf_ver)
+        writeln!(f, "FAR : File Attrubute Record")?;
+        writeln!(f, "   CPU_TYPE [U1] : {}", self.cpu_type)?;
+        writeln!(f, "   STDF_VER [U1] : {}", self.stdf_ver)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// ATR : Audit Trail Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct ATR<'a> {
     #[default(U4E::from(0))]
     pub mod_tim: U4E,
@@ -128,21 +140,21 @@ pub struct ATR<'a> {
     pub cmd_line: Cn<'a>,
 }
 
-impl ATR<'_> {
-    pub fn name() -> String {
-        "ATR".to_string()
-    }
-}
+record_id!(ATR, false, '_);
+atdf!(ATR, '_);
 
-impl<'a> fmt::Display for ATR<'a> {
+impl fmt::Display for ATR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ATR : Audit Trail Record\n")?;
-        write!(f, "   MOD_TIM [U4E]: {}\n", self.mod_tim)?;
-        write!(f, "   CMD_LINE [Cn]: '{}'\n", self.cmd_line)
+        writeln!(f, "ATR : Audit Trail Record")?;
+        writeln!(f, "   MOD_TIM [U4E]: {}", self.mod_tim)?;
+        writeln!(f, "   CMD_LINE [Cn]: '{}'", self.cmd_line)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// MIR : Master Information Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct MIR<'a> {
     #[default(U4E::from(0))]
     pub setup_t: U4E,
@@ -222,57 +234,57 @@ pub struct MIR<'a> {
     pub supr_nam: Cn<'a>,
 }
 
-impl MIR<'_> {
-    pub fn name() -> String {
-        "MIR".to_string()
-    }
-}
+record_id!(MIR, false, '_);
+atdf!(MIR, '_);
 
-impl<'a> fmt::Display for MIR<'a> {
+impl fmt::Display for MIR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "MIR : Master Information Record\n")?;
-        write!(f, "   SETUP_T [U4E] : {}\n", self.setup_t)?;
-        write!(f, "   START_T [U4E] : {}\n", self.start_t)?;
-        write!(f, "   STAT_NUM [U1] : {}\n", self.stat_num)?;
-        write!(f, "   MODE_COD [C1] : '{}'\n", self.mode_cod)?;
-        write!(f, "   RTST_COD [C1] : '{}'\n", self.rtst_cod)?;
-        write!(f, "   PROT_COD [C1] : '{}'\n", self.prot_cod)?;
-        write!(f, "   BURN_TIM [U2] : {}\n", self.burn_tim)?;
-        write!(f, "   CMOD_COD [C1] : '{}'\n", self.cmod_cod)?;
-        write!(f, "   LOT_ID   [Cn] : '{}'\n", self.lot_id)?;
-        write!(f, "   PART_TYP [Cn] : '{}'\n", self.part_typ)?;
-        write!(f, "   NODE_NAM [Cn] : '{}'\n", self.node_nam)?;
-        write!(f, "   TSTR_TYP [Cn] : '{}'\n", self.tstr_typ)?;
-        write!(f, "   JOB_NAM  [Cn] : '{}'\n", self.job_nam)?;
-        write!(f, "   JOB_REV  [Cn] : '{}'\n", self.job_rev)?;
-        write!(f, "   SBLOT_ID [Cn] : '{}'\n", self.sblot_id)?;
-        write!(f, "   OPER_NAM [Cn] : '{}'\n", self.oper_nam)?;
-        write!(f, "   EXEC_TYP [Cn] : '{}'\n", self.exec_typ)?;
-        write!(f, "   EXEC_VER [Cn] : '{}'\n", self.exec_ver)?;
-        write!(f, "   TEST_COD [Cn] : '{}'\n", self.test_cod)?;
-        write!(f, "   TST_TEMP [Cn] : '{}'\n", self.tst_temp)?;
-        write!(f, "   USER_TXT [Cn] : '{}'\n", self.user_txt)?;
-        write!(f, "   AUX_FILE [Cn] : '{}'\n", self.aux_file)?;
-        write!(f, "   PKG_TYP  [Cn] : '{}'\n", self.pkg_typ)?;
-        write!(f, "   FAMLY_ID [Cn] : '{}'\n", self.famly_id)?;
-        write!(f, "   DATE_COD [Cn] : '{}'\n", self.date_cod)?;
-        write!(f, "   FACIL_ID [Cn] : '{}'\n", self.facil_id)?;
-        write!(f, "   FLOOR_ID [Cn] : '{}'\n", self.floor_id)?;
-        write!(f, "   PROC_ID  [Cn] : '{}'\n", self.proc_id)?;
-        write!(f, "   OPER_FRQ [Cn] : '{}'\n", self.oper_frq)?;
-        write!(f, "   SPEC_NAM [Cn] : '{}'\n", self.spec_nam)?;
-        write!(f, "   SPEC_VER [Cn] : '{}'\n", self.spec_ver)?;
-        write!(f, "   FLOW_ID  [Cn] : '{}'\n", self.flow_id)?;
-        write!(f, "   SETUP_ID [Cn] : '{}'\n", self.setup_id)?;
-        write!(f, "   DSGN_REV [Cn] : '{}'\n", self.dsgn_rev)?;
-        write!(f, "   ENG_ID   [Cn] : '{}'\n", self.eng_id)?;
-        write!(f, "   ROM_COD  [Cn] : '{}'\n", self.rom_cod)?;
-        write!(f, "   SERL_NUM [Cn] : '{}'\n", self.serl_num)?;
-        write!(f, "   SUPR_NAM [Cn] : '{}'\n", self.supr_nam)
+        writeln!(f, "MIR : Master Information Record")?;
+        writeln!(f, "   SETUP_T [U4E] : {}", self.setup_t)?;
+        writeln!(f, "   START_T [U4E] : {}", self.start_t)?;
+        writeln!(f, "   STAT_NUM [U1] : {}", self.stat_num)?;
+        writeln!(f, "   MODE_COD [C1] : '{}'", self.mode_cod)?;
+        writeln!(f, "   RTST_COD [C1] : '{}'", self.rtst_cod)?;
+        writeln!(f, "   PROT_COD [C1] : '{}'", self.prot_cod)?;
+        writeln!(f, "   BURN_TIM [U2] : {}", self.burn_tim)?;
+        writeln!(f, "   CMOD_COD [C1] : '{}'", self.cmod_cod)?;
+        writeln!(f, "   LOT_ID   [Cn] : '{}'", self.lot_id)?;
+        writeln!(f, "   PART_TYP [Cn] : '{}'", self.part_typ)?;
+        writeln!(f, "   NODE_NAM [Cn] : '{}'", self.node_nam)?;
+        writeln!(f, "   TSTR_TYP [Cn] : '{}'", self.tstr_typ)?;
+        writeln!(f, "   JOB_NAM  [Cn] : '{}'", self.job_nam)?;
+        writeln!(f, "   JOB_REV  [Cn] : '{}'", self.job_rev)?;
+        writeln!(f, "   SBLOT_ID [Cn] : '{}'", self.sblot_id)?;
+        writeln!(f, "   OPER_NAM [Cn] : '{}'", self.oper_nam)?;
+        writeln!(f, "   EXEC_TYP [Cn] : '{}'", self.exec_typ)?;
+        writeln!(f, "   EXEC_VER [Cn] : '{}'", self.exec_ver)?;
+        writeln!(f, "   TEST_COD [Cn] : '{}'", self.test_cod)?;
+        writeln!(f, "   TST_TEMP [Cn] : '{}'", self.tst_temp)?;
+        writeln!(f, "   USER_TXT [Cn] : '{}'", self.user_txt)?;
+        writeln!(f, "   AUX_FILE [Cn] : '{}'", self.aux_file)?;
+        writeln!(f, "   PKG_TYP  [Cn] : '{}'", self.pkg_typ)?;
+        writeln!(f, "   FAMLY_ID [Cn] : '{}'", self.famly_id)?;
+        writeln!(f, "   DATE_COD [Cn] : '{}'", self.date_cod)?;
+        writeln!(f, "   FACIL_ID [Cn] : '{}'", self.facil_id)?;
+        writeln!(f, "   FLOOR_ID [Cn] : '{}'", self.floor_id)?;
+        writeln!(f, "   PROC_ID  [Cn] : '{}'", self.proc_id)?;
+        writeln!(f, "   OPER_FRQ [Cn] : '{}'", self.oper_frq)?;
+        writeln!(f, "   SPEC_NAM [Cn] : '{}'", self.spec_nam)?;
+        writeln!(f, "   SPEC_VER [Cn] : '{}'", self.spec_ver)?;
+        writeln!(f, "   FLOW_ID  [Cn] : '{}'", self.flow_id)?;
+        writeln!(f, "   SETUP_ID [Cn] : '{}'", self.setup_id)?;
+        writeln!(f, "   DSGN_REV [Cn] : '{}'", self.dsgn_rev)?;
+        writeln!(f, "   ENG_ID   [Cn] : '{}'", self.eng_id)?;
+        writeln!(f, "   ROM_COD  [Cn] : '{}'", self.rom_cod)?;
+        writeln!(f, "   SERL_NUM [Cn] : '{}'", self.serl_num)?;
+        writeln!(f, "   SUPR_NAM [Cn] : '{}'", self.supr_nam)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// MRR : Master Result Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct MRR<'a> {
     pub finish_t: U4E,
     #[default(C1::from(b' '))]
@@ -283,23 +295,35 @@ pub struct MRR<'a> {
     pub exc_desc: Cn<'a>,
 }
 
-impl MRR<'_> {
-    pub fn name() -> String {
-        "MRR".to_string()
-    }
-}
+record_id!(MRR, false, '_);
+atdf!(MRR, '_);
 
-impl <'a> fmt::Display for MRR<'a> {
+impl fmt::Display for MRR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "MRR : Master Result Record\n")?;
-        write!(f, "   FINISH_T [U4E] : {}\n", self.finish_t)?;
-        write!(f, "   DISP_COD  [C1] : '{}'\n", self.disp_cod)?;
-        write!(f, "   USR_DESC  [Cn] : '{}'\n", self.usr_desc)?;
-        write!(f, "   EXC_DESC  [Cn] : '{}'\n", self.exc_desc)
+        writeln!(f, "MRR : Master Result Record")?;
+        writeln!(f, "   FINISH_T [U4] : {}", self.finish_t)?;
+        writeln!(f, "   DISP_COD [C1] : {}", if self.disp_cod.to_string() == " " {
+                                                 "∕".to_string()
+                                             } else {
+                                                 format!("'{}'", self.disp_cod).to_string()
+                                             })?;
+        writeln!(f, "   USR_DESC [Cn] : {}", if self.usr_desc.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                 "∕".to_string()
+                                              } else {
+                                                 format!("'{}'", self.usr_desc).to_string().replace("\n", "").replace("\r", "")
+                                              })?;
+        writeln!(f, "   EXC_DESC [Cn] : {}", if self.exc_desc.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                 "∕".to_string()
+                                             } else {
+                                                 format!("'{}'", self.exc_desc).to_string().replace("\n", "").replace("\r", "")
+                                             })
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// PCR : Part Count Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct PCR {
     pub head_num: U1,
     pub site_num: U1,
@@ -314,26 +338,50 @@ pub struct PCR {
     pub func_cnt: U4,
 }
 
-impl PCR {
-    pub fn name() -> String {
-        "PCR".to_string()
-    }
-}
+record_id!(PCR, false,);
+atdf!(PCR,);
 
 impl fmt::Display for PCR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PCR : Part Count Record\n")?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
-        write!(f, "   PART_CNT [U4] : {}\n", self.part_cnt)?;
-        write!(f, "   RTST_CNT [U4] : {}\n", if u32::from(self.rtst_cnt) == u32::MAX {u32::from(self.rtst_cnt).to_string()} else {"".to_string()})?;
-        write!(f, "   ABRT_CNT [U4] : {}\n", if u32::from(self.abrt_cnt) == u32::MAX {u32::from(self.abrt_cnt).to_string()} else {"".to_string()})?;
-        write!(f, "   GOOD_CNT [U4] : {}\n", if u32::from(self.good_cnt) == u32::MAX {u32::from(self.good_cnt).to_string()} else {"".to_string()})?;
-        write!(f, "   FUNC_CNT [U4] : {}\n", if u32::from(self.func_cnt) == u32::MAX {u32::from(self.func_cnt).to_string()} else {"".to_string()})
+        writeln!(f, "PCR : Part Count Record\n")?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", if self.head_num == U1::MAX {
+                                                 format!("{} → Summary", self.head_num).to_string()
+                                             } else {
+                                                self.head_num.to_string()
+                                             })?;
+        writeln!(f, "   SITE_NUM [U1] : {}", if self.head_num == U1::MAX {
+                                                 "∕".to_string()
+                                             } else {
+                                                 self.site_num.to_string()
+                                             })?;
+        writeln!(f, "   PART_CNT [U4] : {}", self.part_cnt)?;
+        writeln!(f, "   RTST_CNT [U4] : {}", if self.rtst_cnt == U4::MAX {
+                                                 "∕".to_string()
+                                             } else {
+                                                self.rtst_cnt.to_string()
+                                             })?;
+        writeln!(f, "   ABRT_CNT [U4] : {}", if self.abrt_cnt == U4::MAX {
+                                                 "∕".to_string()
+                                             } else {
+                                                self.abrt_cnt.to_string()
+                                             })?;
+        writeln!(f, "   GOOD_CNT [U4] : {}", if self.good_cnt == U4::MAX {
+                                                 "∕".to_string()
+                                             } else {
+                                                self.good_cnt.to_string()
+                                             })?;
+        writeln!(f, "   FUNC_CNT [U4] : {}", if self.func_cnt == U4::MAX {
+                                                 "∕".to_string()
+                                             } else {
+                                                 self.func_cnt.to_string()	                                                 
+                                             })
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// HBR : Hard Bin Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct HBR<'a> {
     pub head_num: U1,
     pub site_num: U1,
@@ -345,25 +393,41 @@ pub struct HBR<'a> {
     pub hbin_nam: Cn<'a>,
 }
 
-impl HBR<'_> {
-    pub fn name() -> String {
-        "HBR".to_string()
-    }
-}
+record_id!(HBR, false, '_);
+atdf!(HBR, '_);
 
-impl <'a> fmt::Display for HBR<'a> {
+impl fmt::Display for HBR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "HBR : Hard Bin Record\n")?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
-        write!(f, "   HBIN_NUM [U2] : {}\n", self.hbin_num)?;
-        write!(f, "   HBIN_CNT [U4] : {}\n", self.hbin_cnt)?;
-        write!(f, "   HBIN_PF  [C1] : '{}'\n", self.hbin_pf)?;
-        write!(f, "   HBIN_NAM [Cn] : '{}'\n", self.hbin_nam)
+        writeln!(f, "HBR : Hard Bin Record")?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", if self.head_num == U1::MAX {
+                                                 "→ Summary".to_string()
+                                             } else {
+                                                 self.head_num.to_string()
+                                             })?;
+        writeln!(f, "   SITE_NUM [U1] : {}", if self.head_num == U1::MAX {
+                                                 "∕".to_string()
+                                             } else {
+                                                 self.site_num.to_string()
+                                             })?;
+        writeln!(f, "   HBIN_NUM [U2] : {}", self.hbin_num)?;
+        writeln!(f, "   HBIN_CNT [U4] : {}", self.hbin_cnt)?;
+        writeln!(f, "   HBIN_PF  [C1] : '{}'", if self.hbin_pf.to_string() == " " {
+                                                   "?".to_string()
+                                               } else {
+                                                   self.hbin_pf.to_string()
+                                               })?;
+        writeln!(f, "   HBIN_NAM [Cn] : '{}'", if self.hbin_nam.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                   "∕".to_string()
+                                               } else {
+                                                   format!("'{}'", self.hbin_nam).to_string().replace("\n", "").replace("\r", "")
+                                               })
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// SBR : Soft Bin Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct SBR<'a> {
     pub head_num: U1,
     pub site_num: U1,
@@ -375,25 +439,41 @@ pub struct SBR<'a> {
     pub sbin_nam: Cn<'a>,
 }
 
-impl SBR<'_> {
-    pub fn name() -> String {
-        "SBR".to_string()
-    }
-}
+record_id!(SBR, false, '_);
+atdf!(SBR, '_);
 
-impl <'a> fmt::Display for SBR<'a> {
+impl fmt::Display for SBR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SBR : Soft Bin Record\n")?;
-        write!(f, "   HEAD_NUM [U1]: {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1]: {}\n", self.site_num)?;
-        write!(f, "   SBIN_NUM [U2]: {}\n", self.sbin_num)?;
-        write!(f, "   SBIN_CNT [U4]: {}\n", self.sbin_cnt)?;
-        write!(f, "   SBIN_PF  [C1]: '{}'\n", self.sbin_pf)?;
-        write!(f, "   SBIN_NAM [Cn]: '{}'\n", self.sbin_nam)
+        writeln!(f, "SBR : Soft Bin Record")?;
+        writeln!(f, "   HEAD_NUM [U1]: {}", if self.head_num == U1::MAX {
+                                                "→ Summary".to_string()
+                                            } else {
+                                                self.head_num.to_string()
+                                            })?;
+        writeln!(f, "   SITE_NUM [U1]: {}", if self.head_num == U1::MAX {
+                                                "∕".to_string()
+                                            } else {
+                                                self.site_num.to_string()
+                                            })?;
+        writeln!(f, "   SBIN_NUM [U2]: {}", self.sbin_num)?;
+        writeln!(f, "   SBIN_CNT [U4]: {}", self.sbin_cnt)?;
+        writeln!(f, "   SBIN_PF  [C1]: '{}'", if self.sbin_pf.to_string() == " " {
+                                                  "?".to_string()
+                                              } else {
+                                                  self.sbin_pf.to_string()
+                                              })?;
+        writeln!(f, "   SBIN_NAM [Cn]: {}", if self.sbin_nam.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                "∕".to_string()
+                                            } else {
+                                                format!("'{}'", self.sbin_nam).to_string().replace("\n", "").replace("\r", "")
+                                            })
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// PMR : Pin Map Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct PMR<'a> {
     pub pmr_index: U2,
     #[default(U2::from(0))]
@@ -410,26 +490,38 @@ pub struct PMR<'a> {
     pub site_num: U1,
 }
 
-impl PMR<'_> {
-    pub fn name() -> String {
-        "PMR".to_string()
-    }
-}
+record_id!(PMR, false, '_);
+atdf!(PMR, '_);
 
-impl <'a> fmt::Display for PMR<'a> {
+impl fmt::Display for PMR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PMR : Pin Map Record\n")?;
-        write!(f, "   PMR_INDEX [U2] : {}\n", self.pmr_index)?;
-        write!(f, "   CHAN_TYP  [U2] : {}\n", self.chan_typ)?;
-        write!(f, "   CHAN_NAM  [Cn] : '{}'\n", self.chan_nam)?;
-        write!(f, "   PHY_NAM   [Cn] : '{}'\n", self.phy_nam)?;
-        write!(f, "   LOG_NAM   [Cn] : {}\n", self.log_nam)?;
-        write!(f, "   HEAD_NUM  [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM  [U1] : {}\n", self.site_num)
+        writeln!(f, "PMR : Pin Map Record")?;
+        writeln!(f, "   PMR_INDEX [U2] : {}", self.pmr_index)?;
+        writeln!(f, "   CHAN_TYP  [U2] : {}", self.chan_typ)?;       
+        writeln!(f, "   CHAN_NAM  [Cn] : '{}'", if self.chan_nam.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                    "∕".to_string()
+                                                } else {
+                                                    format!("'{}'", self.chan_nam).to_string().replace("\n", "").replace("\r", "")
+                                                })?;
+        writeln!(f, "   PHY_NAM   [Cn] : '{}'", if self.phy_nam.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                    "∕".to_string()
+                                                } else {
+                                                    format!("'{}'", self.phy_nam).to_string().replace("\n", "").replace("\r", "")
+                                                })?;
+        writeln!(f, "   LOG_NAM   [Cn] : {}", if self.log_nam.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                    "∕".to_string()
+                                                } else {
+                                                    format!("'{}'", self.log_nam).to_string().replace("\n", "").replace("\r", "")
+                                                })?;        
+        writeln!(f, "   HEAD_NUM  [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM  [U1] : {}", self.site_num)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// PGR : Pin Group Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct PGR<'a> {
     pub grp_indx: U2,
     #[default(Cn(b""))]
@@ -441,23 +533,23 @@ pub struct PGR<'a> {
     pub pmr_indx: Vec<U2>,
 }
 
-impl PGR<'_> {
-    pub fn name() -> String {
-        "PGR".to_string()
-    }
-}
+record_id!(PGR, false, '_);
+atdf!(PGR, '_);
 
-impl <'a> fmt::Display for PGR<'a> {
+impl fmt::Display for PGR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PGR : Pin Group Record\n")?;
-        write!(f, "   GRP_INDX   [U2] : {}\n", self.grp_indx)?;
-        write!(f, "   GRP_NAM    [Cn] : {}\n", self.grp_nam)?;
-        write!(f, "   INDX_CNT k [U2] : {}\n", self.indx_cnt)?;
-        write!(f, "   PMR_INDX [kxU2] : {:?}\n", self.pmr_indx)  //TODO: implement std::fmt::Display for Vec<U2>
+        writeln!(f, "PGR : Pin Group Record")?;
+        writeln!(f, "   GRP_INDX   [U2] : {}", self.grp_indx)?;
+        writeln!(f, "   GRP_NAM    [Cn] : {}", self.grp_nam)?;
+        writeln!(f, "   INDX_CNT k [U2] : {}", self.indx_cnt)?;
+        writeln!(f, "   PMR_INDX [kxU2] : {:?}", self.pmr_indx)  //TODO: implement std::fmt::Display for Vec<U2>
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// PLR : Pin List Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct PLR<'a> {
     pub grp_cnt: U2,
     #[array_length(grp_cnt)]
@@ -483,27 +575,27 @@ pub struct PLR<'a> {
     pub rtn_chal: Vec<Cn<'a>>,
 }
 
-impl PLR<'_> {
-    pub fn name() -> String {
-        "PLR".to_string()
-    }
-}
+record_id!(PLR, false, '_);
+atdf!(PLR, '_);
 
-impl <'a> fmt::Display for PLR<'a> {
+impl fmt::Display for PLR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PLR : Pin List Record\n")?;
-        write!(f, "   GRP_CNT  k [U2]: {}\n", self.grp_cnt)?;
-        write!(f, "   GRP_INDX [kxU2]: {:?}\n", self.grp_indx)?; //TODO: implement std::fmt::Display for Vec<U2>
-        write!(f, "   GRP_MODE [kxU2]: {:?}\n", self.grp_mode)?; //TODO: implement std::fmt::Display for Vec<U2>
-        write!(f, "   GRP_RADX [kxU1]: {:?}\n", self.grp_radx)?; //TODO: implement std::fmt::Display for Vec<U1>
-        write!(f, "   PGM_CHAR [kxCn]: {:?}\n", self.pgm_char)?; //TODO: implement std::fmt::Display for Vec<Cn>
-        write!(f, "   RTN_CHAR [kxCn]: {:?}\n", self.rtn_char)?; //TODO: implement std::fmt::Display for Vec<Cn>
-        write!(f, "   PGM_CHAL [kxCn]: {:?}\n", self.pgm_chal)?; //TODO: implement std::fmt::Display for Vec<Cn>
-        write!(f, "   RTN_CHAL [kxCn]: {:?}\n", self.rtn_chal)   //TODO: implement std::fmt::Display for Vec<Cn>
+        writeln!(f, "PLR : Pin List Record")?;
+        writeln!(f, "   GRP_CNT  k [U2]: {}", self.grp_cnt)?;
+        writeln!(f, "   GRP_INDX [kxU2]: {:?}", self.grp_indx)?; //TODO: implement std::fmt::Display for Vec<U2>
+        writeln!(f, "   GRP_MODE [kxU2]: {:?}", self.grp_mode)?; //TODO: implement std::fmt::Display for Vec<U2>
+        writeln!(f, "   GRP_RADX [kxU1]: {:?}", self.grp_radx)?; //TODO: implement std::fmt::Display for Vec<U1>
+        writeln!(f, "   PGM_CHAR [kxCn]: {:?}", self.pgm_char)?; //TODO: implement std::fmt::Display for Vec<Cn>
+        writeln!(f, "   RTN_CHAR [kxCn]: {:?}", self.rtn_char)?; //TODO: implement std::fmt::Display for Vec<Cn>
+        writeln!(f, "   PGM_CHAL [kxCn]: {:?}", self.pgm_chal)?; //TODO: implement std::fmt::Display for Vec<Cn>
+        writeln!(f, "   RTN_CHAL [kxCn]: {:?}", self.rtn_chal)   //TODO: implement std::fmt::Display for Vec<Cn>
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// RDR : Retest Data Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct RDR {
     pub num_bins: U2,
     #[array_length(num_bins)]
@@ -511,21 +603,21 @@ pub struct RDR {
     pub rtst_bin: Vec<U2>,
 }
 
-impl RDR {
-    pub fn name() -> String {
-        "RDR".to_string()
-    }
-}
+record_id!(RDR, false,);
+atdf!(RDR,);
 
 impl fmt::Display for RDR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "RDR : Retest Data Record\n")?;
-        write!(f, "   NUM_BINS k [U2] : {}\n", self.num_bins)?;
-        write!(f, "   RTST_BIN [kxU2] : {:?}\n", self.rtst_bin) //TODO: implement std::fmt::Display for Vec<U2>
+        writeln!(f, "RDR : Retest Data Record")?;
+        writeln!(f, "   NUM_BINS k [U2] : {}", self.num_bins)?;
+        writeln!(f, "   RTST_BIN [kxU2] : {:?}", self.rtst_bin) //TODO: implement std::fmt::Display for Vec<U2>
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// SDR : Site Description Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct SDR<'a> {
     pub head_num: U1,
     pub site_grp: U1,
@@ -567,39 +659,39 @@ pub struct SDR<'a> {
     pub extr_id: Cn<'a>,
 }
 
-impl SDR<'_> {
-    pub fn name() -> String {
-        "SDR".to_string()
-    }
-}
+record_id!(SDR, false, '_);
+atdf!(SDR, '_);
 
-impl <'a> fmt::Display for SDR<'a> {
+impl fmt::Display for SDR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SDR : Site Description Record\n")?;
-        write!(f, "   HEAD_NUM   [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_GRP   [U1] : {}\n", self.site_grp)?;
-        write!(f, "   SITE_CNT k [U1] : {}\n", self.site_cnt)?;
-        write!(f, "   SITE_NUM [kxU1] : {:?}\n", self.site_num)?; //TODO: implement std::fmt::Display for Vec<U1>
-        write!(f, "   HAND_TYP   [Cn] : '{}'\n", self.hand_typ)?;
-        write!(f, "   HAND_ID    [Cn] : '{}'\n", self.hand_id)?;
-        write!(f, "   CARD_TYP   [Cn] : '{}'\n", self.card_typ)?;
-        write!(f, "   CARD_ID    [Cn] : '{}'\n", self.card_id)?;
-        write!(f, "   LOAD_TYP   [Cn] : '{}'\n", self.load_typ)?;
-        write!(f, "   LOAD_ID    [Cn] : '{}'\n", self.load_id)?;
-        write!(f, "   DIB_TYP    [Cn] : '{}'\n", self.dib_typ)?;
-        write!(f, "   DIB_ID     [Cn] : '{}'\n", self.dib_id)?;
-        write!(f, "   CABL_TYP   [Cn] : '{}'\n", self.cabl_typ)?;
-        write!(f, "   CABL_ID    [Cn] : '{}'\n", self.cabl_id)?;
-        write!(f, "   CONT_TYP   [Cn] : '{}'\n", self.cont_typ)?;
-        write!(f, "   CONT_ID    [Cn] : '{}'\n", self.cont_id)?;
-        write!(f, "   LASR_TYP   [Cn] : '{}'\n", self.lasr_typ)?;
-        write!(f, "   LASR_ID    [Cn] : '{}'\n", self.lasr_id)?;
-        write!(f, "   EXTR_TYP   [Cn] : '{}'\n", self.extr_typ)?;
-        write!(f, "   EXTR_ID    [Cn] : '{}'\n", self.extr_id)
+        writeln!(f, "SDR : Site Description Record")?;
+        writeln!(f, "   HEAD_NUM   [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_GRP   [U1] : {}", self.site_grp)?;
+        writeln!(f, "   SITE_CNT k [U1] : {}", self.site_cnt)?;
+        writeln!(f, "   SITE_NUM [kxU1] : {:?}", self.site_num)?; //TODO: implement std::fmt::Display for Vec<U1>
+        writeln!(f, "   HAND_TYP   [Cn] : '{}'", self.hand_typ)?;
+        writeln!(f, "   HAND_ID    [Cn] : '{}'", self.hand_id)?;
+        writeln!(f, "   CARD_TYP   [Cn] : '{}'", self.card_typ)?;
+        writeln!(f, "   CARD_ID    [Cn] : '{}'", self.card_id)?;
+        writeln!(f, "   LOAD_TYP   [Cn] : '{}'", self.load_typ)?;
+        writeln!(f, "   LOAD_ID    [Cn] : '{}'", self.load_id)?;
+        writeln!(f, "   DIB_TYP    [Cn] : '{}'", self.dib_typ)?;
+        writeln!(f, "   DIB_ID     [Cn] : '{}'", self.dib_id)?;
+        writeln!(f, "   CABL_TYP   [Cn] : '{}'", self.cabl_typ)?;
+        writeln!(f, "   CABL_ID    [Cn] : '{}'", self.cabl_id)?;
+        writeln!(f, "   CONT_TYP   [Cn] : '{}'", self.cont_typ)?;
+        writeln!(f, "   CONT_ID    [Cn] : '{}'", self.cont_id)?;
+        writeln!(f, "   LASR_TYP   [Cn] : '{}'", self.lasr_typ)?;
+        writeln!(f, "   LASR_ID    [Cn] : '{}'", self.lasr_id)?;
+        writeln!(f, "   EXTR_TYP   [Cn] : '{}'", self.extr_typ)?;
+        writeln!(f, "   EXTR_ID    [Cn] : '{}'", self.extr_id)
     }
 } 
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// WIR : Wafer Information Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct WIR<'a> {
     pub head_num: U1,
     #[default(U1::from(255))]
@@ -609,23 +701,23 @@ pub struct WIR<'a> {
     pub wafer_id: Cn<'a>,
 }
 
-impl WIR<'_> {
-    pub fn name() -> String {
-        "WIR".to_string()
-    }
-}
+record_id!(WIR, false, '_);
+atdf!(WIR, '_);
 
-impl <'a> fmt::Display for WIR<'a> {
+impl fmt::Display for WIR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WIR : Wafer Information Record\n")?;
-        write!(f, "   HEAD_NUM  [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_GRP  [U1] : {}\n", self.site_grp)?;
-        write!(f, "   START_T  [U4E] : {}\n", self.start_t)?;
-        write!(f, "   WAFER_ID  [Cn] : '{}'\n", self.wafer_id)
+        writeln!(f, "WIR : Wafer Information Record")?;
+        writeln!(f, "   HEAD_NUM  [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_GRP  [U1] : {}", self.site_grp)?;
+        writeln!(f, "   START_T  [U4E] : {}", self.start_t)?;
+        writeln!(f, "   WAFER_ID  [Cn] : '{}'", self.wafer_id)
     }
 }	
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// WRR : Wafer Result Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct WRR<'a> {
     pub head_num: U1,
     #[default(U1::from(255))]
@@ -654,33 +746,33 @@ pub struct WRR<'a> {
     pub exc_desc: Cn<'a>,
 }
 
-impl WRR<'_> {
-    pub fn name() -> String {
-        "WRR".to_string()
-    }
-}
+record_id!(WRR, false, '_);
+atdf!(WRR, '_);
 
-impl <'a> fmt::Display for WRR<'a> {
+impl fmt::Display for WRR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WRR : Wafer Result Record\n")?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_GRP [U1] : {}\n", self.site_grp)?;
-        write!(f, "   FINISH_T [U4] : {}\n", self.finish_t)?;
-        write!(f, "   PART_CNT [U4] : {}\n", self.part_cnt)?;
-        write!(f, "   RTST_CNT [U4] : {}\n", self.rtst_cnt)?;
-        write!(f, "   ABRT_CNT [U4] : {}\n", self.abrt_cnt)?;
-        write!(f, "   GOOD_CNT [U4] : {}\n", self.good_cnt)?;
-        write!(f, "   FUNC_CNT [U4] : {}\n", self.func_cnt)?;
-        write!(f, "   WAFER_ID [Cn] : '{}'\n", self.wafer_id)?;
-        write!(f, "   FABWF_ID [Cn] : '{}'\n", self.fabwf_id)?;
-        write!(f, "   FRAME_ID [Cn] : '{}'\n", self.frame_id)?;
-        write!(f, "   MASK_ID  [Cn] : '{}'\n", self.mask_id)?;
-        write!(f, "   USR_DESC [Cn] : '{}'\n", self.usr_desc)?;
-        write!(f, "   EXC_DESC [Cn] : '{}'\n", self.exc_desc)
+        writeln!(f, "WRR : Wafer Result Record")?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_GRP [U1] : {}", self.site_grp)?;
+        writeln!(f, "   FINISH_T [U4] : {}", self.finish_t)?;
+        writeln!(f, "   PART_CNT [U4] : {}", self.part_cnt)?;
+        writeln!(f, "   RTST_CNT [U4] : {}", self.rtst_cnt)?;
+        writeln!(f, "   ABRT_CNT [U4] : {}", self.abrt_cnt)?;
+        writeln!(f, "   GOOD_CNT [U4] : {}", self.good_cnt)?;
+        writeln!(f, "   FUNC_CNT [U4] : {}", self.func_cnt)?;
+        writeln!(f, "   WAFER_ID [Cn] : '{}'", self.wafer_id)?;
+        writeln!(f, "   FABWF_ID [Cn] : '{}'", self.fabwf_id)?;
+        writeln!(f, "   FRAME_ID [Cn] : '{}'", self.frame_id)?;
+        writeln!(f, "   MASK_ID  [Cn] : '{}'", self.mask_id)?;
+        writeln!(f, "   USR_DESC [Cn] : '{}'", self.usr_desc)?;
+        writeln!(f, "   EXC_DESC [Cn] : '{}'", self.exc_desc)
     }
 }
 
-#[derive(Debug, PartialEq, STDFRecord)]
+// ========================================================
+// WCS : Wafer Configuration Record
+// ========================================================
+#[derive(Debug, PartialEq, Serialize, STDFRecord)]
 pub struct WCR {
     #[default(R4::from(0.0))]
     pub wafr_siz: R4,
@@ -692,9 +784,9 @@ pub struct WCR {
     pub wf_units: U1,
     #[default(C1::from(0x20))]
     pub wf_flat: C1,
-    #[default(I2::from(std::i16::MIN))]
+    #[default(I2::from(i16::MIN))]
     pub center_x: I2,
-    #[default(I2::from(std::i16::MIN))]
+    #[default(I2::from(i16::MIN))]
     pub center_y: I2,
     #[default(C1::from(0x20))]
     pub pos_x: C1,
@@ -702,48 +794,48 @@ pub struct WCR {
     pub pos_y: C1,
 }
 
-impl WCR {
-    pub fn name() -> String {
-        "WCR".to_string()
-    }
-}
+record_id!(WCR, false,);
+atdf!(WCR,);
 
 impl fmt::Display for WCR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "WCR : Wafer Configuration Record\n")?;
-        write!(f, "   WAFR_SIZ [R4] : {}\n", self.wafr_siz)?;
-        write!(f, "   DIE_HT   [R4] : {}\n", self.die_ht)?;
-        write!(f, "   DIE_WID  [R4] : {}\n", self.die_wid)?;
-        write!(f, "   WF_UNITS [U1] : {}\n", self.wf_units)?;
-        write!(f, "   WF_FLAT  [C1] : {}\n", self.wf_flat)?;
-        write!(f, "   CENTER_X [I2] : {}\n", self.center_x)?;
-        write!(f, "   CENTER_Y [I2] : {}\n", self.center_y)?;
-        write!(f, "   POS_X    [C1] : '{}'\n", self.pos_x)?;
-        write!(f, "   POS_Y    [C1] : '{}'\n", self.pos_y)
+        writeln!(f, "WCR : Wafer Configuration Record")?;
+        writeln!(f, "   WAFR_SIZ [R4] : {}", self.wafr_siz)?;
+        writeln!(f, "   DIE_HT   [R4] : {}", self.die_ht)?;
+        writeln!(f, "   DIE_WID  [R4] : {}", self.die_wid)?;
+        writeln!(f, "   WF_UNITS [U1] : {}", self.wf_units)?;
+        writeln!(f, "   WF_FLAT  [C1] : {}", self.wf_flat)?;
+        writeln!(f, "   CENTER_X [I2] : {}", self.center_x)?;
+        writeln!(f, "   CENTER_Y [I2] : {}", self.center_y)?;
+        writeln!(f, "   POS_X    [C1] : '{}'", self.pos_x)?;
+        writeln!(f, "   POS_Y    [C1] : '{}'", self.pos_y)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// PIR : Part Information Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct PIR {
     pub head_num: U1,
     pub site_num: U1,
 }
 
-impl PIR {
-    pub fn name() -> String {
-        "PIR".to_string()
-    }
-}
+record_id!(PIR, false,);
+atdf!(PIR,);
 
 impl fmt::Display for PIR {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PIR : Part Information Record\n")?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)
+        writeln!(f, "PIR : Part Information Record")?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM [U1] : {}", self.site_num)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// PRR : Part Results Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct PRR<'a> {
     pub head_num: U1,
     pub site_num: U1,
@@ -752,9 +844,9 @@ pub struct PRR<'a> {
     pub hard_bin: U2,
     #[default(U2::from(0xffff))]
     pub soft_bin: U2,
-    #[default(I2::from(std::i16::MIN))]
+    #[default(I2::from(i16::MIN))]
     pub x_coord: I2,
-    #[default(I2::from(std::i16::MIN))]
+    #[default(I2::from(i16::MIN))]
     pub y_coord: I2,
     #[default(U4::from(0))]
     pub test_t: U4,
@@ -766,52 +858,81 @@ pub struct PRR<'a> {
     pub part_fix: Bn<'a>,
 }
 
-impl PRR<'_> {
-    pub fn name() -> String {
-        "PRR".to_string()
-    }
-}
+record_id!(PRR, false, '_);
+atdf!(PRR, '_);
 
-impl <'a> fmt::Display for PRR<'a> {
+impl fmt::Display for PRR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PRR : Part Results Record\n")?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
-        write!(f, "   PART_FLG [B1] : {} {}\n", self.part_flg, prr_part_flg(self.part_flg))?;
-        write!(f, "   NUM_TEST [U2] : {}\n", self.num_test)?;
-        write!(f, "   HARD_BIN [U2] : {}\n", self.hard_bin)?;
-        write!(f, "   SOFT_BIN [U2] : {}\n", self.soft_bin)?;
-        write!(f, "   X_COORD  [I2] : {}\n", if i16::from(self.x_coord) == -32768_i16 {"".to_string()} else {format!("{}", i16::from(self.x_coord))})?;
-        write!(f, "   Y_COORD  [I2] : {}\n", if i16::from(self.y_coord) == -32768_i16 {"".to_string()} else {format!("{}", i16::from(self.y_coord))})?;
-        write!(f, "   TEST_T   [U4] : {}\n", self.test_t)?;
-        write!(f, "   PART_ID  [Cn] : '{}'\n", self.part_id.to_string().replace("\n", "").replace("\r", ""))?;
-        write!(f, "   PART_TXT [Cn] : '{}'\n", self.part_txt.to_string().replace("\n", "").replace("\r", ""))?;
-        write!(f, "   PART_FIX [Bn] : {}\n", self.part_fix)
+        writeln!(f, "PRR : Part Results Record")?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM [U1] : {}", self.site_num)?;
+        writeln!(f, "   PART_FLG [B1] : {} {}", self.part_flg, prr_part_flg(self.part_flg))?;
+        writeln!(f, "   NUM_TEST [U2] : {}", self.num_test)?;
+        writeln!(f, "   HARD_BIN [U2] : {}", self.hard_bin)?;
+        writeln!(f, "   SOFT_BIN [U2] : {}", if u16::from(self.soft_bin) == 65535_u16 {
+                                                 "∕".to_string()
+                                             } else {
+                                                 format!("{}", u16::from(self.soft_bin))
+                                             })?;
+        writeln!(f, "   X_COORD  [I2] : {}", if self.x_coord == I2::MIN {
+                                               "∕".to_string()
+                                           } else {
+                                               self.x_coord.to_string()
+                                           })?;
+        writeln!(f, "   Y_COORD  [I2] : {}", if self.y_coord == I2::MIN {
+                                               "∕".to_string()
+                                           } else {
+                                               self.y_coord.to_string()
+                                           })?;
+        writeln!(f, "   TEST_T   [U4] : {}", if u32::from(self.test_t) == 0_u32 {
+                                               "∕".to_string()
+                                           } else {
+                                               format!("{} → {:.3} sec", u32::from(self.test_t), u32::from(self.test_t) as f32 / 1_000.0)
+                                           })?;
+        writeln!(f, "   PART_ID  [Cn] : {}", if self.part_id.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                 "∕".to_string()
+                                             } else {
+                                                 format!("'{}'", self.part_id.to_string().replace("\n", "").replace("\r", ""))
+                                             })?;
+        writeln!(f, "   PART_TXT [Cn] : {}", if self.part_txt.to_string().replace("\n", "").replace("\r", "").is_empty() {
+                                                 "∕".to_string()
+                                             } else {
+                                                 format!("'{}'", self.part_txt.to_string().replace("\n", "").replace("\r", ""))
+                                             })?;
+        writeln!(f, "   PART_FIX [Bn] : {}", if self.part_fix.to_string().is_empty() {
+                                                 "∕".to_string()
+                                             } else {
+                                                 format!("{}",self.part_fix)
+                                             })
     }
 }
 
 fn prr_part_flg(part_flg: B1) -> String {
     let mut msg = String::new();
-    let mut info: Vec<String> = Vec::new(); 
 
-    if u8::from(part_flg) & 0b0000_0100 == 0b0000_0100  { info.push(String::from("Abnormal end of testing")); }
-
-    msg.push_str("(");
-    msg.push_str(&info.join(", "));
-    msg.push_str(") → ");
+    msg.push_str("→ ");
 
     if u8::from(part_flg) & 0b0001_0000 == 0b0001_0000  { 
-        msg.push_str("?");
+        msg.push('?');
+    } else if u8::from(part_flg) & 0b0000_1000 == 0b0000_1000 {
+        msg.push_str("FAIL");
     } else {
-        if u8::from(part_flg) & 0b0000_1000 == 0b0000_1000 {
-            msg.push_str("FAIL");
-        } else {
-            msg.push_str("PASS");
-        }
+        msg.push_str("PASS");
     }
+
+    if u8::from(part_flg) & 0b0000_0100 == 0b0000_0100  { 
+        msg.push_str(" (");
+        msg.push_str("Abnormal end of testing");
+        msg.push(')');
+    }
+
     msg
 }
-#[derive(Debug, PartialEq, STDFRecord)]
+
+// ========================================================
+// TSR : Test Synopsis Record
+// ========================================================
+#[derive(Debug, PartialEq, Serialize, STDFRecord)]
 pub struct TSR<'a> {
     pub head_num: U1,
     pub site_num: U1,
@@ -828,54 +949,54 @@ pub struct TSR<'a> {
     pub test_lbl: Cn<'a>,
     #[default(B1::from(0xff))]
     pub opt_flag: B1,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub test_tim: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub test_min: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub test_max: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub tst_sums: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub tst_sqrs: R4,
 }
 
-impl TSR<'_> {
-    pub fn name() -> String {
-        "TSR".to_string()
-    }
-}
+record_id!(TSR, false, '_);
+atdf!(TSR, '_);
 
-impl <'a> fmt::Display for TSR<'a> {
+impl fmt::Display for TSR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TSR : Test Synopsis Record\n")?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
-        write!(f, "   TEST_TYP [C1] : '{}'\n", self.test_typ)?;
-        write!(f, "   TEST_NUM [U4] : {}\n", self.test_num)?;
-        write!(f, "   EXEC_CNT [U4] : {}\n", self.exec_cnt)?;
-        write!(f, "   FAIL_CNT [U4] : {}\n", self.fail_cnt)?;
-        write!(f, "   ALRM_CNT [U4] : {}\n", self.alrm_cnt)?;
-        write!(f, "   TEST_NAM [Cn] : '{}'\n", self.test_nam)?;
-        write!(f, "   SEQ_NAME [Cn] : '{}'\n", self.seq_name)?;
-        write!(f, "   TEST_LBL [Cn] : '{}'\n", self.test_lbl)?;
-        write!(f, "   OPT_FLAG [B1] : {} (see check marks below)\n", self.opt_flag)?;
-        write!(f, "   TEST_TIM [R4] : {} {}\n", self.test_tim, if u8::from(self.opt_flag) & 0b00000100 == 0b00000100 { "✗" } else { "✓" })?;
-        write!(f, "   TEST_MIN [R4] : {} {}\n", self.test_min, if u8::from(self.opt_flag) & 0b00000001 == 0b00000001 { "✗" } else { "✓" })?;
-        write!(f, "   TEST_MAX [R4] : {} {}\n", self.test_max, if u8::from(self.opt_flag) & 0b00000010 == 0b00000010 { "✗" } else { "✓" })?;
-        write!(f, "   TST_SUMS [R4] : {} {}\n", self.tst_sums, if u8::from(self.opt_flag) & 0b00010000 == 0b00010000 { "✗" } else { "✓" })?;
-        write!(f, "   TST_SQRS [R4] : {} {}\n", self.tst_sqrs, if u8::from(self.opt_flag) & 0b00100000 == 0b00100000 { "✗" } else { "✓" })
+        writeln!(f, "TSR : Test Synopsis Record")?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM [U1] : {}", self.site_num)?;
+        writeln!(f, "   TEST_TYP [C1] : '{}'", self.test_typ)?;
+        writeln!(f, "   TEST_NUM [U4] : {}", self.test_num)?;
+        writeln!(f, "   EXEC_CNT [U4] : {}", self.exec_cnt)?;
+        writeln!(f, "   FAIL_CNT [U4] : {}", self.fail_cnt)?;
+        writeln!(f, "   ALRM_CNT [U4] : {}", self.alrm_cnt)?;
+        writeln!(f, "   TEST_NAM [Cn] : '{}'", self.test_nam)?;
+        writeln!(f, "   SEQ_NAME [Cn] : '{}'", self.seq_name)?;
+        writeln!(f, "   TEST_LBL [Cn] : '{}'", self.test_lbl)?;
+        writeln!(f, "   OPT_FLAG [B1] : {} (see check marks below)", self.opt_flag)?;
+        writeln!(f, "   TEST_TIM [R4] : {}", if u8::from(self.opt_flag) & 0b00000100 == 0b00000100 { String::from("∕") } else { self.test_tim.to_string() })?;
+        writeln!(f, "   TEST_MIN [R4] : {}", if u8::from(self.opt_flag) & 0b00000001 == 0b00000001 { String::from("∕") } else { self.test_min.to_string() })?;
+        writeln!(f, "   TEST_MAX [R4] : {}", if u8::from(self.opt_flag) & 0b00000010 == 0b00000010 { String::from("∕") } else { self.test_max.to_string() })?;
+        writeln!(f, "   TST_SUMS [R4] : {}", if u8::from(self.opt_flag) & 0b00010000 == 0b00010000 { String::from("∕") } else { self.tst_sums.to_string() })?;
+        writeln!(f, "   TST_SQRS [R4] : {}", if u8::from(self.opt_flag) & 0b00100000 == 0b00100000 { String::from("∕") } else { self.tst_sqrs.to_string() })
     }
 }
 
-#[derive(Debug, PartialEq, STDFRecord)]
+// ========================================================
+// PTR : Parametric Test Record
+// ========================================================
+#[derive(Debug, PartialEq, Serialize, STDFRecord)]
 pub struct PTR<'a> {
     pub test_num: U4,
     pub head_num: U1,
     pub site_num: U1,
     pub test_flg: B1,
     pub parm_flg: B1,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub result: R4,
     #[default(Cn(b""))]
     pub test_txt: Cn<'a>,
@@ -883,15 +1004,15 @@ pub struct PTR<'a> {
     pub alarm_id: Cn<'a>,
     #[default(B1::from(0x00))]
     pub opt_flag: B1,
-    #[default(I1::from(std::i8::MIN))]
+    #[default(I1::from(i8::MIN))]
     pub res_scal: I1,
-    #[default(I1::from(std::i8::MIN))]
+    #[default(I1::from(i8::MIN))]
     pub llm_scal: I1,
-    #[default(I1::from(std::i8::MIN))]
+    #[default(I1::from(i8::MIN))]
     pub hlm_scal: I1,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub lo_limit: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub hi_limit: R4,
     #[default(Cn(b""))]
     pub units: Cn<'a>,
@@ -901,45 +1022,42 @@ pub struct PTR<'a> {
     pub c_llmfmt: Cn<'a>,
     #[default(Cn(b""))]
     pub c_hlmfmt: Cn<'a>,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub lo_spec: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub hi_spec: R4,
 }
 
-impl PTR<'_> {
-    pub fn name() -> String {
-        "PTR".to_string()
-    }
-}
+record_id!(PTR, true, '_);
+atdf!(PTR, '_);
 
-impl <'a> fmt::Display for PTR<'a> {
+impl fmt::Display for PTR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "PTR : Parametric Test Record\n")?;
-        write!(f, "   TEST_NUM [U4] : {}\n", self.test_num)?;
-        write!(f, "   HEAD_NUM [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM [U1] : {}\n", self.site_num)?;
-        write!(f, "   TEST_FLG [B1] : {} {}\n", self.test_flg, ptr_test_flg(self.test_flg))?;
-        write!(f, "   PARM_FLG [B1] : {} {}\n", self.parm_flg, ptr_parm_flg(self.parm_flg))?;
-        write!(f, "   RESULT   [R4] : {}\n", self.result)?;
-        write!(f, "   TEST_TXT [Cn] : '{}'\n", self.test_txt)?;
+        writeln!(f, "PTR : Parametric Test Record")?;
+        writeln!(f, "   TEST_NUM [U4] : {}", self.test_num)?;
+        writeln!(f, "   HEAD_NUM [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM [U1] : {}", self.site_num)?;
+        writeln!(f, "   TEST_FLG [B1] : {} {}", self.test_flg, ptr_test_flg(self.test_flg))?;
+        writeln!(f, "   PARM_FLG [B1] : {} {}", self.parm_flg, ptr_parm_flg(self.parm_flg))?;
+        writeln!(f, "   RESULT   [R4] : {}", self.result)?;
+        writeln!(f, "   TEST_TXT [Cn] : '{}'", self.test_txt)?;
         if self.opt_flag == B1::from(0x00) {
-            write!(f, "   ALARM_ID [Cn] : {}\n", self.alarm_id)
+            writeln!(f, "   ALARM_ID [Cn] : {}", self.alarm_id)
         } else {
-            write!(f, "   ALARM_ID [Cn] : {}\n", self.alarm_id)?;
-            write!(f, "   --------------\n")?;
-            write!(f, "   OPT_FLAG [B1] : {} {}\n", self.opt_flag, ptr_opt_flag(self.opt_flag))?;
-            write!(f, "   RES_SCAL [I1] : {}\n", self.res_scal)?;
-            write!(f, "   LLM_SCAL [I1] : {}\n", self.llm_scal)?;
-            write!(f, "   HLM_SCAL [I1] : {}\n", self.hlm_scal)?;
-            write!(f, "   LO_LIMIT [R4] : {}\n", self.lo_limit)?;
-            write!(f, "   HI_LIMIT [R4] : {}\n", self.hi_limit)?;
-            write!(f, "   UNITS    [Cn] : '{}'\n", self.units)?;
-            write!(f, "   C_RESFMT [Cn] : '{}'\n", self.c_resfmt)?;
-            write!(f, "   C_LLMFMT [Cn] : '{}'\n", self.c_llmfmt)?;
-            write!(f, "   C_HLMFMT [Cn] : '{}'\n", self.c_hlmfmt)?;
-            write!(f, "   LO_SPEC  [R4] : {}\n", self.lo_spec)?;
-            write!(f, "   HI_SPEC  [R4] : {}\n", self.hi_spec)
+            writeln!(f, "   ALARM_ID [Cn] : {}", self.alarm_id)?;
+            writeln!(f, "   --------------")?;
+            writeln!(f, "   OPT_FLAG [B1] : {} {}", self.opt_flag, ptr_opt_flag(self.opt_flag))?;
+            writeln!(f, "   RES_SCAL [I1] : {}", self.res_scal)?;
+            writeln!(f, "   LLM_SCAL [I1] : {}", self.llm_scal)?;
+            writeln!(f, "   HLM_SCAL [I1] : {}", self.hlm_scal)?;
+            writeln!(f, "   LO_LIMIT [R4] : {}", self.lo_limit)?;
+            writeln!(f, "   HI_LIMIT [R4] : {}", self.hi_limit)?;
+            writeln!(f, "   UNITS    [Cn] : '{}'", self.units)?;
+            writeln!(f, "   C_RESFMT [Cn] : '{}'", self.c_resfmt)?;
+            writeln!(f, "   C_LLMFMT [Cn] : '{}'", self.c_llmfmt)?;
+            writeln!(f, "   C_HLMFMT [Cn] : '{}'", self.c_hlmfmt)?;
+            writeln!(f, "   LO_SPEC  [R4] : {}", self.lo_spec)?;
+            writeln!(f, "   HI_SPEC  [R4] : {}", self.hi_spec)
         }
     }
 }
@@ -955,18 +1073,16 @@ fn ptr_test_flg(test_flg: B1) -> String {
     if u8::from(test_flg) & 0b0001_0000 == 0b0001_0000  { info.push(String::from("Test not executed")); }
     if u8::from(test_flg) & 0b0010_0000 == 0b0010_0000  { info.push(String::from("Test aborted")); }
 
-    msg.push_str("(");
+    msg.push('(');
     msg.push_str(&info.join(", "));
     msg.push_str(") → ");
 
     if u8::from(test_flg) & 0b0100_0000 == 0b0100_0000  { 
-        msg.push_str("?");
+        msg.push('?');
+    } else if u8::from(test_flg) & 0b1000_0000 == 0b1000_0000 {
+        msg.push_str("FAIL");
     } else {
-        if u8::from(test_flg) & 0b1000_0000 == 0b1000_0000 {
-            msg.push_str("FAIL");
-        } else {
-            msg.push_str("PASS");
-        }
+        msg.push_str("PASS");
     }
     msg
 }
@@ -981,9 +1097,9 @@ fn ptr_parm_flg(parm_flg: B1) -> String {
     if u8::from(parm_flg) & 0b0000_1000 == 0b0000_1000  { info.push(String::from("RESULT > HI_LIMIT")); }
     if u8::from(parm_flg) & 0b0001_0000 == 0b0001_0000  { info.push(String::from("RESULT < LO_LIMIT")); }
 
-    msg.push_str("(");
+    msg.push('(');
     msg.push_str(&info.join(", "));
-    msg.push_str(")");
+    msg.push(')');
 
     msg
 }
@@ -1000,15 +1116,17 @@ fn ptr_opt_flag(opt_flag:B1) -> String {
     if u8::from(opt_flag) & 0b0100_0000 == 0b0100_0000  { info.push(String::from("no LO_LIMIT")); } 
     if u8::from(opt_flag) & 0b1000_0000 == 0b1000_0000  { info.push(String::from("no HI_LIMIT")); }
 
-    msg.push_str("(");
+    msg.push('(');
     msg.push_str(&info.join(", "));
-    msg.push_str(")");
+    msg.push(')');
 
     msg
 }
 
-
-#[derive(Debug, PartialEq, STDFRecord)]
+// ========================================================
+// MRR : Multiple-Result Record
+// ========================================================
+#[derive(Debug, PartialEq, Serialize, STDFRecord)]
 pub struct MPR<'a> {
     pub test_num: U4,
     pub head_num: U1,
@@ -1031,19 +1149,19 @@ pub struct MPR<'a> {
     pub alarm_id: Cn<'a>,
     #[default(B1::from(0x00))]
     pub opt_flag: B1,
-    #[default(I1::from(std::i8::MIN))]
+    #[default(I1::from(i8::MIN))]
     pub res_scal: I1,
-    #[default(I1::from(std::i8::MIN))]
+    #[default(I1::from(i8::MIN))]
     pub llm_scal: I1,
-    #[default(I1::from(std::i8::MIN))]
+    #[default(I1::from(i8::MIN))]
     pub hlm_scal: I1,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub lo_limit: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub hi_limit: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub start_in: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub incr_in: R4,
     #[array_length(rtn_icnt)]
     #[array_type(U2)]
@@ -1058,56 +1176,56 @@ pub struct MPR<'a> {
     pub c_llmfmt: Cn<'a>,
     #[default(Cn(b""))]
     pub c_hlmfmt: Cn<'a>,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub lo_spec: R4,
-    #[default(R4::from(std::f32::NAN))]
+    #[default(R4::from(f32::NAN))]
     pub hi_spec: R4,
 }
 
-impl MPR<'_> {
-    pub fn name() -> String {
-        "MPR".to_string()
-    }
-}
+record_id!(MPR, true, '_);
+atdf!(MPR, '_);
 
-impl <'a> fmt::Display for MPR<'a> {
+impl fmt::Display for MPR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "MPR : Multiple-Result Parametric Record\n")?;
-        write!(f, "   TEST_NUM   [U4] : {}\n", self.test_num)?;
-        write!(f, "   HEAD_NUM   [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM   [U1] : {}\n", self.site_num)?;
-        write!(f, "   TEST_FLG   [B1] : {}\n", self.test_flg)?;
-        write!(f, "   PARM_FLG   [B1] : {}\n", self.parm_flg)?;
-        write!(f, "   RTN_ICNT j [U2] : {}\n", self.rtn_icnt)?;
-        write!(f, "   RSLT_CNT k [U2] : {}\n", self.rslt_cnt)?;
-        write!(f, "   RTN_STAT [jxN1] : {:?}\n", self.rtn_stat)?; //TODO: implement std:fmt::Display for Vec<N1>
-        write!(f, "   RTN_RSLT [kxR4] : {:?}\n", self.rtn_rslt)?;  //TODO: implement std:fmt::Display for Vec<R4>
-        write!(f, "   TEST_TXT   [Cn] : '{}'\n", self.test_txt)?;
+        writeln!(f, "MPR : Multiple-Result Parametric Record")?;
+        writeln!(f, "   TEST_NUM   [U4] : {}", self.test_num)?;
+        writeln!(f, "   HEAD_NUM   [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM   [U1] : {}", self.site_num)?;
+        writeln!(f, "   TEST_FLG   [B1] : {}", self.test_flg)?;
+        writeln!(f, "   PARM_FLG   [B1] : {}", self.parm_flg)?;
+        writeln!(f, "   RTN_ICNT j [U2] : {}", self.rtn_icnt)?;
+        writeln!(f, "   RSLT_CNT k [U2] : {}", self.rslt_cnt)?;
+        writeln!(f, "   RTN_STAT [jxN1] : {:?}", self.rtn_stat)?; //TODO: implement std:fmt::Display for Vec<N1>
+        writeln!(f, "   RTN_RSLT [kxR4] : {:?}", self.rtn_rslt)?;  //TODO: implement std:fmt::Display for Vec<R4>
+        writeln!(f, "   TEST_TXT   [Cn] : '{}'", self.test_txt)?;
         if self.opt_flag == B1::from(0x00) {
-            write!(f, "   ALARM_ID   [Cn] : '{}'\n", self.alarm_id)
+            writeln!(f, "   ALARM_ID   [Cn] : '{}'", self.alarm_id)
         } else {
-            write!(f, "   ALARM_ID   [Cn] : '{}'\n", self.alarm_id)?;
-            write!(f, "   OPT_FLAG   [B1] : {}\n", self.opt_flag)?;
-            write!(f, "   RES_SCAL   [I1] : {}\n", self.res_scal)?;
-            write!(f, "   LLM_SCAL   [I1] : {}\n", self.llm_scal)?;
-            write!(f, "   HLM_SCAL   [I1] : {}\n", self.hlm_scal)?;
-            write!(f, "   LO_LIMIT   [R4] : {}\n", self.lo_limit)?;
-            write!(f, "   HI_LIMIT   [R4] : {}\n", self.hi_limit)?;
-            write!(f, "   START_IN   [R4] : {}\n", self.start_in)?;
-            write!(f, "   INCR_IN    [R4] : {}\n", self.incr_in)?;
-            write!(f, "   RTN_INDX [jxU2] : {:?}\n", self.rtn_indx)?; //TODO: implement std:fmt::Display for Vec<U2>
-            write!(f, "   UNITS      [Cn] : '{}'\n", self.units)?;
-            write!(f, "   UNITS_IN   [Cn] : '{}'\n", self.units_in)?;
-            write!(f, "   C_RESFMT   [Cn] : '{}'\n", self.c_resfmt)?;
-            write!(f, "   C_LLMFMT   [Cn] : '{}'\n", self.c_llmfmt)?;
-            write!(f, "   C_HLMFMT   [Cn] : '{}'\n", self.c_hlmfmt)?;
-            write!(f, "   LO_SPEC    [R4] : {}\n", self.lo_spec)?;
-            write!(f, "   HI_SPEC    [R4] : {}\n", self.hi_spec) 
+            writeln!(f, "   ALARM_ID   [Cn] : '{}'", self.alarm_id)?;
+            writeln!(f, "   OPT_FLAG   [B1] : {}", self.opt_flag)?;
+            writeln!(f, "   RES_SCAL   [I1] : {}", self.res_scal)?;
+            writeln!(f, "   LLM_SCAL   [I1] : {}", self.llm_scal)?;
+            writeln!(f, "   HLM_SCAL   [I1] : {}", self.hlm_scal)?;
+            writeln!(f, "   LO_LIMIT   [R4] : {}", self.lo_limit)?;
+            writeln!(f, "   HI_LIMIT   [R4] : {}", self.hi_limit)?;
+            writeln!(f, "   START_IN   [R4] : {}", self.start_in)?;
+            writeln!(f, "   INCR_IN    [R4] : {}", self.incr_in)?;
+            writeln!(f, "   RTN_INDX [jxU2] : {:?}", self.rtn_indx)?; //TODO: implement std:fmt::Display for Vec<U2>
+            writeln!(f, "   UNITS      [Cn] : '{}'", self.units)?;
+            writeln!(f, "   UNITS_IN   [Cn] : '{}'", self.units_in)?;
+            writeln!(f, "   C_RESFMT   [Cn] : '{}'", self.c_resfmt)?;
+            writeln!(f, "   C_LLMFMT   [Cn] : '{}'", self.c_llmfmt)?;
+            writeln!(f, "   C_HLMFMT   [Cn] : '{}'", self.c_hlmfmt)?;
+            writeln!(f, "   LO_SPEC    [R4] : {}", self.lo_spec)?;
+            writeln!(f, "   HI_SPEC    [R4] : {}", self.hi_spec) 
         }
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// FTR : Functional Test Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct FTR<'a> {
     pub test_num: U4,
     pub head_num: U1,
@@ -1167,86 +1285,84 @@ pub struct FTR<'a> {
     pub spin_map: Dn<'a>,
 }
 
-impl FTR<'_> {
-    pub fn name() -> String {
-        "FTR".to_string()
-    }
-}
+record_id!(FTR, true, '_);
 
-impl <'a> fmt::Display for FTR<'a> {
+impl fmt::Display for FTR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "FTR : Functional Test Record\n")?;
-        write!(f, "   TEST_NUM   [U4] : {}\n", self.test_num)?;
-        write!(f, "   HEAD_NUM   [U1] : {}\n", self.head_num)?;
-        write!(f, "   SITE_NUM   [U1] : {}\n", self.site_num)?;
+        writeln!(f, "FTR : Functional Test Record")?;
+        writeln!(f, "   TEST_NUM   [U4] : {}", self.test_num)?;
+        writeln!(f, "   HEAD_NUM   [U1] : {}", self.head_num)?;
+        writeln!(f, "   SITE_NUM   [U1] : {}", self.site_num)?;
         if self.opt_flag == B1::from(0x00) {
-            write!(f, "   TEST_FLG   [B1] : {}\n", self.test_flg)
+            writeln!(f, "   TEST_FLG   [B1] : {}", self.test_flg)
         } else {
-            write!(f, "   TEST_FLG   [B1] : {}\n", self.test_flg)?;
-            write!(f, "   OPT_FLAG   [B1] : {}\n", self.opt_flag)?;
-            write!(f, "   CYCL_CNT   [U4] : {}\n", self.cycl_cnt)?;
-            write!(f, "   REL_VADR   [U4] : {}\n", self.rel_vadr)?;
-            write!(f, "   REPT_CNT   [U4] : {}\n", self.rept_cnt)?;
-            write!(f, "   NUM_FAIL   [U4] : {}\n", self.num_fail)?;
-            write!(f, "   XFAIL_AD   [I4] : {}\n", self.xfail_ad)?;
-            write!(f, "   YFAIL_AD   [I4] : {}\n", self.yfail_ad)?;
-            write!(f, "   VECT_OFF   [I2] : {}\n", self.vect_off)?;
-            write!(f, "   RTN_ICNT j [U2] : {}\n", self.rtn_icnt)?;
-            write!(f, "   PGM_ICNT k [U2] : {}\n", self.pgm_icnt)?;
-            write!(f, "   RTN_INDX [jxU2] : {:?}\n", self.rtn_indx)?;
-            write!(f, "   RTN_STAT [jxN1] : {:?}\n", self.rtn_stat)?;
-            write!(f, "   PGM_INDX [kxU2] : {:?}\n", self.pgm_indx)?;
-            write!(f, "   PGM_STAT [kxN1] : {:?}\n", self.pgm_stat)?;
-            write!(f, "   FAIL_PIN   [Dn] : {}\n", self.fail_pin)?;
-            write!(f, "   VECT_NAM   [Cn] : '{}'\n", self.vect_nam)?;
-            write!(f, "   TIME_SET   [Cn] : '{}'\n", self.time_set)?;
-            write!(f, "   OP_CODE    [Cn] : '{}'\n", self.op_code)?;
-            write!(f, "   TEST_TXT   [Cn] : '{}'\n", self.test_txt)?;
-            write!(f, "   ALARM_ID   [Cn] : '{}'\n", self.alarm_id)?;
-            write!(f, "   PROG_TXT   [Cn] : '{}'\n", self.prog_txt)?;
-            write!(f, "   RSLT_TXT   [Cn] : '{}'\n", self.rslt_txt)?;
-            write!(f, "   PATG_NUM   [U1] : {}\n", self.patg_num)?;
-            write!(f, "   SPIN_MAP   [Dn] : {}\n", self.spin_map)
+            writeln!(f, "   TEST_FLG   [B1] : {}", self.test_flg)?;
+            writeln!(f, "   OPT_FLAG   [B1] : {}", self.opt_flag)?;
+            writeln!(f, "   CYCL_CNT   [U4] : {}", self.cycl_cnt)?;
+            writeln!(f, "   REL_VADR   [U4] : {}", self.rel_vadr)?;
+            writeln!(f, "   REPT_CNT   [U4] : {}", self.rept_cnt)?;
+            writeln!(f, "   NUM_FAIL   [U4] : {}", self.num_fail)?;
+            writeln!(f, "   XFAIL_AD   [I4] : {}", self.xfail_ad)?;
+            writeln!(f, "   YFAIL_AD   [I4] : {}", self.yfail_ad)?;
+            writeln!(f, "   VECT_OFF   [I2] : {}", self.vect_off)?;
+            writeln!(f, "   RTN_ICNT j [U2] : {}", self.rtn_icnt)?;
+            writeln!(f, "   PGM_ICNT k [U2] : {}", self.pgm_icnt)?;
+            writeln!(f, "   RTN_INDX [jxU2] : {:?}", self.rtn_indx)?;
+            writeln!(f, "   RTN_STAT [jxN1] : {:?}", self.rtn_stat)?;
+            writeln!(f, "   PGM_INDX [kxU2] : {:?}", self.pgm_indx)?;
+            writeln!(f, "   PGM_STAT [kxN1] : {:?}", self.pgm_stat)?;
+            writeln!(f, "   FAIL_PIN   [Dn] : {}", self.fail_pin)?;
+            writeln!(f, "   VECT_NAM   [Cn] : '{}'", self.vect_nam)?;
+            writeln!(f, "   TIME_SET   [Cn] : '{}'", self.time_set)?;
+            writeln!(f, "   OP_CODE    [Cn] : '{}'", self.op_code)?;
+            writeln!(f, "   TEST_TXT   [Cn] : '{}'", self.test_txt)?;
+            writeln!(f, "   ALARM_ID   [Cn] : '{}'", self.alarm_id)?;
+            writeln!(f, "   PROG_TXT   [Cn] : '{}'", self.prog_txt)?;
+            writeln!(f, "   RSLT_TXT   [Cn] : '{}'", self.rslt_txt)?;
+            writeln!(f, "   PATG_NUM   [U1] : {}", self.patg_num)?;
+            writeln!(f, "   SPIN_MAP   [Dn] : {}", self.spin_map)
         }
     }
 }
 
-
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// BPS : Begin Program Section
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct BPS<'a> {
     #[default(Cn(b""))]
     pub seq_name: Cn<'a>,
 }
 
-impl BPS<'_> {
-    pub fn name() -> String {
-        "BPS".to_string()
-    }
-}
+record_id!(BPS, false, '_);
+atdf!(BPS, '_);
 
-impl <'a> fmt::Display for BPS<'a> {
+impl fmt::Display for BPS<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "BPS : Begin Program Section record\n")?;
-        write!(f, "   SEQ_NAME [Cn] : '{}'\n", self.seq_name)
+        writeln!(f, "BPS : Begin Program Section record")?;
+        writeln!(f, "   SEQ_NAME [Cn] : '{}'", self.seq_name)
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+// ========================================================
+// EPS : End Program Section
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct EPS;
 
-impl EPS {
-    pub fn name() -> String {
-        "EPS".to_string()
-    }
-}
+record_id!(EPS, false,);
+atdf!(EPS,);
 
 impl fmt::Display for EPS {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "EPS : End Program Section record\n")
+        writeln!(f, "EPS : End Program Section record")
     }
 }
 
-#[derive(Debug, PartialEq, STDFRecord)]
+// ========================================================
+// GDR : Generic Data Record
+// ========================================================
+#[derive(Debug, PartialEq, Serialize, STDFRecord)]
 pub struct GDR<'a> {
     #[default(U2::from(0))]
     pub fld_cnt: U2,
@@ -1255,39 +1371,39 @@ pub struct GDR<'a> {
     pub gen_data: Vec<Vn<'a>>,
 }
 
-impl GDR<'_> {
-    pub fn name() -> String {
-        "GDR".to_string()
-    }
-}
+record_id!(GDR, false, '_);
+atdf!(GDR, '_);
 
-impl <'a> fmt::Display for GDR<'a> {
+impl fmt::Display for GDR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "GDR\n")?;
-        write!(f, "   FLD_CNT  [U2]: {}\n", self.fld_cnt)?;
-        write!(f, "   GEN_DATA [Vn]: {:?}\n", self.gen_data)
+        writeln!(f, "GDR")?;
+        writeln!(f, "   FLD_CNT  [U2]: {}", self.fld_cnt)?;
+        writeln!(f, "   GEN_DATA [Vn]: {:?}", self.gen_data)
     }
 }
 
-#[derive(Debug, Eq, PartialEq, STDFRecord)]
+// ========================================================
+// DTR : Datalog Text Record
+// ========================================================
+#[derive(Debug, Eq, PartialEq, Serialize, STDFRecord)]
 pub struct DTR<'a> {
     #[default(Cn(b""))]
     pub text_dat: Cn<'a>,
 }
 
-impl DTR<'_> {
-    pub fn name() -> String {
-        "DTR".to_string()
-    }
-}
+record_id!(DTR, false, '_);
+atdf!(DTR, '_);
 
-impl <'a> fmt::Display for DTR<'a> {
+impl fmt::Display for DTR<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "DTR : Datalog Text Record\n")?;
-        write!(f, "   TEXT_DAT [Cn] : '{}'\n", self.text_dat)
+        writeln!(f, "DTR : Datalog Text Record")?;
+        writeln!(f, "   TEXT_DAT [Cn] : '{}'", self.text_dat)
     }
 }
 
+// ========================================================
+// Raw record
+// ========================================================
 #[derive(Debug, Eq, PartialEq)]
 pub struct Raw<'a> {
     pub rec_typ: U1,
@@ -1333,33 +1449,65 @@ pub enum V4<'a> {
 impl V4<'_> {
     pub fn name(&self) -> String {
         match self {
-            V4::FAR(_) => FAR::name(),
-            V4::ATR(_) => ATR::name(),
-            V4::MIR(_) => MIR::name(),
-            V4::MRR(_) => MRR::name(),
-            V4::PCR(_) => PCR::name(),
-            V4::HBR(_) => HBR::name(),
-            V4::SBR(_) => SBR::name(),
-            V4::PMR(_) => PMR::name(),
-            V4::PGR(_) => PGR::name(),
-            V4::PLR(_) => PLR::name(),
-            V4::RDR(_) => RDR::name(),
-            V4::SDR(_) => SDR::name(),
-            V4::WIR(_) => WIR::name(),
-            V4::WRR(_) => WRR::name(),
-            V4::WCR(_) => WCR::name(),
-            V4::PIR(_) => PIR::name(),
-            V4::PRR(_) => PRR::name(),
-            V4::TSR(_) => TSR::name(),
-            V4::PTR(_) => PTR::name(),
-            V4::MPR(_) => MPR::name(),
-            V4::FTR(_) => FTR::name(),
-            V4::BPS(_) => BPS::name(),
-            V4::EPS(_) => EPS::name(),
-            V4::GDR(_) => GDR::name(),
-            V4::DTR(_) => DTR::name(),
+            V4::FAR(rec) => rec.get_name_as_string(),
+            V4::ATR(rec) => rec.get_name_as_string(),
+            V4::MIR(rec) => rec.get_name_as_string(),
+            V4::MRR(rec) => rec.get_name_as_string(),
+            V4::PCR(rec) => rec.get_name_as_string(),
+            V4::HBR(rec) => rec.get_name_as_string(),
+            V4::SBR(rec) => rec.get_name_as_string(),
+            V4::PMR(rec) => rec.get_name_as_string(),
+            V4::PGR(rec) => rec.get_name_as_string(),
+            V4::PLR(rec) => rec.get_name_as_string(),
+            V4::RDR(rec) => rec.get_name_as_string(),
+            V4::SDR(rec) => rec.get_name_as_string(),
+            V4::WIR(rec) => rec.get_name_as_string(),
+            V4::WRR(rec) => rec.get_name_as_string(),
+            V4::WCR(rec) => rec.get_name_as_string(),
+            V4::PIR(rec) => rec.get_name_as_string(),
+            V4::PRR(rec) => rec.get_name_as_string(),
+            V4::TSR(rec) => rec.get_name_as_string(),
+            V4::PTR(rec) => rec.get_name_as_string(),
+            V4::MPR(rec) => rec.get_name_as_string(),
+            V4::FTR(rec) => rec.get_name_as_string(),
+            V4::BPS(rec) => rec.get_name_as_string(),
+            V4::EPS(rec) => rec.get_name_as_string(),
+            V4::GDR(rec) => rec.get_name_as_string(),
+            V4::DTR(rec) => rec.get_name_as_string(),
             V4::Unknown(_) => "???".to_string(),
             V4::Invalid(_) => "???".to_string()
+        }
+    }
+
+    pub fn rec_typ_sub(&self) -> (u8, u8) {
+        match self {
+            V4::FAR(_) => (0, 10),
+            V4::ATR(_) => (0, 20),
+            V4::MIR(_) => (1, 10),
+            V4::MRR(_) => (1, 20),
+            V4::PCR(_) => (1, 30),
+            V4::HBR(_) => (1, 40),
+            V4::SBR(_) => (1, 50),
+            V4::PMR(_) => (1, 60),
+            V4::PGR(_) => (1, 62),
+            V4::PLR(_) => (1, 63),
+            V4::RDR(_) => (1, 70),
+            V4::SDR(_) => (1, 80),
+            V4::WIR(_) => (2, 10),
+            V4::WRR(_) => (2, 20),
+            V4::WCR(_) => (2, 30),
+            V4::PIR(_) => (5, 10),
+            V4::PRR(_) => (5, 20),
+            V4::TSR(_) => (10, 30),
+            V4::PTR(_) => (15, 10),
+            V4::MPR(_) => (15, 15),
+            V4::FTR(_) => (15, 20),
+            V4::BPS(_) => (20, 10),
+            V4::EPS(_) => (20, 20),
+            V4::GDR(_) => (50, 10),
+            V4::DTR(_) => (50, 30),
+            V4::Unknown(ref r) => (u8::from(&r.rec_typ), u8::from(&r.rec_sub)),
+            V4::Invalid(ref r) => (u8::from(&r.rec_typ), u8::from(&r.rec_sub)),
         }
     }
 }
@@ -1421,7 +1569,7 @@ impl<'a> TryRead<'a, ctx::Endian> for V4<'a> {
     }
 }
 
-impl<'a> TryWrite<ctx::Endian> for V4<'a> {
+impl TryWrite<ctx::Endian> for V4<'_> {
     fn try_write(self, bytes: &mut [u8], endian: ctx::Endian) -> byte::Result<usize> {
         let offset = &mut 0;
         let (typ, sub) = self.rec_typ_sub();
@@ -1467,39 +1615,6 @@ impl<'a> TryWrite<ctx::Endian> for V4<'a> {
     }
 }
 
-impl<'a> V4<'a> {
-    fn rec_typ_sub(&self) -> (u8, u8) {
-        match self {
-            V4::FAR(_) => (0, 10),
-            V4::ATR(_) => (0, 20),
-            V4::MIR(_) => (1, 10),
-            V4::MRR(_) => (1, 20),
-            V4::PCR(_) => (1, 30),
-            V4::HBR(_) => (1, 40),
-            V4::SBR(_) => (1, 50),
-            V4::PMR(_) => (1, 60),
-            V4::PGR(_) => (1, 62),
-            V4::PLR(_) => (1, 63),
-            V4::RDR(_) => (1, 70),
-            V4::SDR(_) => (1, 80),
-            V4::WIR(_) => (2, 10),
-            V4::WRR(_) => (2, 20),
-            V4::WCR(_) => (2, 30),
-            V4::PIR(_) => (5, 10),
-            V4::PRR(_) => (5, 20),
-            V4::TSR(_) => (10, 30),
-            V4::PTR(_) => (15, 10),
-            V4::MPR(_) => (15, 15),
-            V4::FTR(_) => (15, 20),
-            V4::BPS(_) => (20, 10),
-            V4::EPS(_) => (20, 20),
-            V4::GDR(_) => (50, 10),
-            V4::DTR(_) => (50, 30),
-            V4::Unknown(ref r) => (u8::from(&r.rec_typ), u8::from(&r.rec_sub)),
-            V4::Invalid(ref r) => (u8::from(&r.rec_typ), u8::from(&r.rec_sub)),
-        }
-    }
-}
 
 //TODO: Implement std::fmt::Display for V4
 // impl <'a> fmt::Display for V4<'a> {
@@ -1510,6 +1625,7 @@ impl<'a> V4<'a> {
 //         }
 //     }
 // }
+//TODO: Implement to_atdf for V4
 
 pub fn is_supported_records() -> Vec<String> {
     vec![
@@ -1545,36 +1661,8 @@ pub fn is_supported_records() -> Vec<String> {
 
 //TODO: Document this function ... do we really need this ?!?
 pub fn is_supported_typ_sub(typ_sub: (u8, u8)) -> bool {
-    match typ_sub {
-        (0, 10) => true,
-        (0, 20) => true,
-        (1, 10) => true,
-        (1, 20) => true,
-        (1, 30) => true,
-        (1, 40) => true,
-        (1, 50) => true,
-        (1, 60) => true,
-        (1, 62) => true,
-        (1, 63) => true,
-        (1, 70) => true,
-        (1, 80) => true,
-        (2, 10) => true,
-        (2, 20) => true,
-        (2, 30) => true,
-        (5, 10) => true,
-        (5, 20) => true,
-        (10, 30) => true,
-        (15, 10) => true,
-        (15, 15) => true,
-        (15, 20) => true,
-        (20, 10) => true,
-        (20, 20) => true,
-        (50, 10) => true,
-        (50, 30) => true,
-        _ => false,
-    }
+    matches!(typ_sub, (0, 10) | (0, 20) | (1, 10) | (1, 20) | (1, 30) | (1, 40) | (1, 50) | (1, 60) | (1, 62) | (1, 63) | (1, 70) | (1, 80) | (2, 10) | (2, 20) | (2, 30) | (5, 10) | (5, 20) | (10, 30) | (15, 10) | (15, 15) | (15, 20) | (20, 10) | (20, 20) | (50, 10) | (50, 30)) 
 }
-
 
 /// Returns the name of the STDF record type and subtype.
 ///
@@ -1689,15 +1777,13 @@ pub fn name_to_typ_sub(name: &str) -> (u8, u8) {
     }
 }
 
-
-
-pub fn is_test_record(typ:u8) -> bool {
-    if typ == 15 {
-        true
-    } else {
-        false
-    }
-}
+// pub fn is_test_record(typ:u8) -> bool {
+//     if typ == 15 {
+//         true
+//     } else {
+//         false
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

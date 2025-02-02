@@ -1,5 +1,4 @@
 use serde::Serialize;
-use serde_json;
 
 #[derive(Serialize)]
 struct S {

@@ -1,60 +1,62 @@
 use std::convert;
 use std::fmt;
+use std::fmt::Write;
 
 extern crate byte;
 use byte::ctx;
 use byte::{check_len, BytesExt, TryRead, TryWrite};
-use chrono::DateTime;
+use time::{OffsetDateTime, format_description::well_known::Rfc2822};
+use serde::Serialize;
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct B1(pub u8);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct C1(pub u8);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct U1(pub u8);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct N1(pub u8);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct U2(pub u16);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct U4(pub u32);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct U4E(pub u32);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct U8(pub u64);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct I1(pub i8);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct I2(pub i16);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct I4(pub i32);
 
-#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct I8(pub i64);
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize)]
 pub struct R4(pub f32);
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Serialize)]
 pub struct R8(pub f64);
 
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Cn<'a>(pub &'a [u8]);
 
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Bn<'a>(pub &'a [u8]);
 
-#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Dn<'a>(pub u16, pub &'a [u8]);
 
 macro_rules! single_byte_type {
@@ -111,10 +113,19 @@ impl fmt::Display for C1 {
     }
 }
 
+impl U1 {
+    pub const MAX: U1 = U1(u8::MAX);
+}
+
 impl fmt::Display for U1 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
+}
+
+impl I1 {
+    pub const MAX: I1 = I1(i8::MAX);
+    pub const MIN: I1 = I1(i8::MIN);
 }
 
 impl fmt::Display for I1 {
@@ -178,10 +189,18 @@ fixed_multi_byte_type!(I8, i64, 8);
 fixed_multi_byte_type!(R4, f32, 4);
 fixed_multi_byte_type!(R8, f64, 8);
 
+impl U2 {
+    pub const MAX: U2 = U2(u16::MAX);
+}
+
 impl fmt::Display for U2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
+}
+
+impl U4 {
+    pub const MAX: U4 = U4(u32::MAX);
 }
 
 impl fmt::Display for U4 {
@@ -192,10 +211,14 @@ impl fmt::Display for U4 {
 
 impl fmt::Display for U4E {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let datetime  = DateTime::from_timestamp(self.0 as i64, 0).unwrap();
-        let formatted_datetime = datetime.format("%A, %B %d, %Y @ %H:%M:%S").to_string();
-        write!(f, "{} ({})", formatted_datetime, self.0)
+        let datetime  = OffsetDateTime::from_unix_timestamp(self.0 as i64).unwrap();
+        let formatted_datetime = datetime.format(&Rfc2822).unwrap();
+        write!(f, "{} → {}", self.0, formatted_datetime)
     }
+}
+
+impl U8 {
+    pub const MAX: U8 = U8(u64::MAX);
 }
 
 impl fmt::Display for U8 {
@@ -204,10 +227,20 @@ impl fmt::Display for U8 {
     }
 }
 
+impl I2 {
+    pub const MAX: I2 = I2(i16::MAX);
+    pub const MIN: I2 = I2(i16::MIN);
+}
+
 impl fmt::Display for I2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
+}
+
+impl I4 {
+    pub const MAX: I4 = I4(i32::MAX);
+    pub const MIN: I4 = I4(i32::MIN);
 }
 
 impl fmt::Display for I4 {
@@ -216,16 +249,35 @@ impl fmt::Display for I4 {
     }
 }
 
+impl I8 {
+    pub const MAX: I8 = I8(i64::MAX);
+    pub const MIN: I8 = I8(i64::MIN);
+}
+
 impl fmt::Display for I8 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
+impl R4 {
+    pub const MAX: R4 = R4(f32::MAX);
+    pub const MIN: R4 = R4(f32::MIN);
+    pub const INFINITY: R4 = R4(f32::INFINITY);
+    pub const NEG_INFINITY: R4 = R4(f32::NEG_INFINITY);
+}
+
 impl fmt::Display for R4 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
+}
+
+impl R8 {
+    pub const MAX: R8 = R8(f64::MAX);
+    pub const MIN: R8 = R8(f64::MIN);
+    pub const INFINITY: R8 = R8(f64::INFINITY);
+    pub const NEG_INFINITY: R8 = R8(f64::NEG_INFINITY);
 }
 
 impl fmt::Display for R8 {
@@ -265,48 +317,53 @@ macro_rules! variable_length_type {
 variable_length_type!(Cn);
 variable_length_type!(Bn);
 
-impl<'a> fmt::Debug for Cn<'a> {
+impl fmt::Debug for Cn<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, r#"Cn("{}")"#, String::from_utf8_lossy(&self.0))
+        write!(f, r#"Cn("{}")"#, String::from_utf8_lossy(self.0))
     }
 }
 
-impl<'a> fmt::Display for Cn<'a> {
+impl fmt::Display for Cn<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(&self.0))
+        write!(f, "{}", String::from_utf8_lossy(self.0))
     }
 }
 
 fn to_hex_string(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .map(|b| format!("{:02X}", b))
-        .collect::<String>()
+    //TODO: remove the commented out code after verification the new code works.
+    // bytes
+    //     .iter()
+    //     .map(|b| format!("{:02X}", b))
+    //     .collect::<String>()
+    bytes.iter().fold(String::new(), |mut output, b| {
+        let _ = write!(output, "{b:02X}");
+        output
+    })
 }
 
-impl<'a> fmt::Debug for Bn<'a> {
+impl fmt::Debug for Bn<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, r#"Bn("{}")"#, to_hex_string(&self.0))
+        write!(f, r#"Bn("{}")"#, to_hex_string(self.0))
     }
 }
 
-impl<'a> fmt::Display for Bn<'a> {
+impl fmt::Display for Bn<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", to_hex_string(&self.0))
+        write!(f, "{}", to_hex_string(self.0))
     }
 }
 
-impl<'a> fmt::Debug for Dn<'a> {
+impl fmt::Debug for Dn<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, r#"Dn("{}")"#, to_hex_string(&self.1))
+        write!(f, r#"Dn("{}")"#, to_hex_string(self.1))
     }
 }
 
-impl<'a> fmt::Display for Dn<'a> {
+impl fmt::Display for Dn<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // TODO: implement display for Dn, self.0 = # of nibbles, self.1 = data 
         // it should display something like '0100 0010 1111' ... or maybe with /n and nibble numbers ...
-        write!(f, "{}", to_hex_string(&self.1))
+        write!(f, "{}", to_hex_string(self.1))
     }
 }
 
@@ -325,7 +382,7 @@ impl<'a> TryRead<'a, ctx::Endian> for Dn<'a> {
     }
 }
 
-impl<'a> TryWrite<ctx::Endian> for Dn<'a> {
+impl TryWrite<ctx::Endian> for Dn<'_> {
     fn try_write(self, bytes: &mut [u8], endian: ctx::Endian) -> byte::Result<usize> {
         let offset = &mut 0;
         let mut d_len = self.0;
@@ -335,12 +392,12 @@ impl<'a> TryWrite<ctx::Endian> for Dn<'a> {
             d_len = (b_len * 8) as u16;
         }
         bytes.write_with::<u16>(offset, d_len, endian)?;
-        bytes.write::<&[u8]>(offset, &self.1[0..b_len as usize])?;
+        bytes.write::<&[u8]>(offset, &self.1[0..b_len])?;
         Ok(self.1.len() + 2)
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Vn<'a> {
     B0,
     U1(U1),
@@ -385,7 +442,7 @@ impl<'a> TryRead<'a, ctx::Endian> for Vn<'a> {
     }
 }
 
-impl<'a> TryWrite<ctx::Endian> for Vn<'a> {
+impl TryWrite<ctx::Endian> for Vn<'_> {
     fn try_write(self, bytes: &mut [u8], endian: ctx::Endian) -> byte::Result<usize> {
         let mut offset: usize = 0;
         match self {

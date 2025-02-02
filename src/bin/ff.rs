@@ -1,5 +1,4 @@
-use file_format::{FileFormat, Kind};
-use std::fs;
+use file_format::FileFormat;
 use std::path::Path;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

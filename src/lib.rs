@@ -18,7 +18,7 @@ pub fn mrr_offset_in_file(file: &mut File) -> Option<u64> {
         Some(endian) => endian,
         None => panic!("Endianess not detected"),
     };
-    let saved_position = file.seek(SeekFrom::Current(0)).unwrap();
+    let saved_position = file.stream_position().unwrap();
     let file_length = file.seek(SeekFrom::End(0)).unwrap();
     file.seek(SeekFrom::Start(0)).unwrap();
 
@@ -99,7 +99,7 @@ pub fn get_index_from_stdf_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec
         panic!("Endianess not detected");
     } 
 
-    let saved_position = file.seek(SeekFrom::Current(0))?;
+    let saved_position = file.stream_position()?;
     let file_length = file.seek(SeekFrom::End(0))?;
     file.seek(SeekFrom::Start(0))?;
 
@@ -120,12 +120,19 @@ pub fn get_index_from_stdf_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec
             None => panic!("Endianess not detected"),
         };
         if file_length - pos < rec_size as u64 { break; }
-        if index.contains_key(&(rec_typ[0], rec_sub[0])) {
-            let vec:&mut Vec<u64>  = index.get_mut(&(rec_typ[0], rec_sub[0])).unwrap();
-            vec.push(pos.clone());
+        if let std::collections::hash_map::Entry::Vacant(e) = index.entry((rec_typ[0], rec_sub[0])) {
+            e.insert(vec![pos]);
         } else {
-            index.insert((rec_typ[0], rec_sub[0]), vec![pos.clone()]);
+            let vec:&mut Vec<u64>  = index.get_mut(&(rec_typ[0], rec_sub[0])).unwrap();
+            vec.push(pos);
         }
+        // if index.contains_key(&(rec_typ[0], rec_sub[0])) {
+        //     let vec:&mut Vec<u64>  = index.get_mut(&(rec_typ[0], rec_sub[0])).unwrap();
+        //     vec.push(pos);
+        // } else {
+        //     index.insert((rec_typ[0], rec_sub[0]), vec![pos]);
+        // }
+
         //FIXME: do not continue after a MRR record is found
         pos += 4 + rec_size as u64;
         file.seek(SeekFrom::Current(rec_size))?; // skip the record data
@@ -174,7 +181,7 @@ pub fn get_index_from_stdf_file(file: &mut File) -> Result<HashMap<(u8, u8), Vec
 /// }
 /// ```
 pub fn get_endian_from_file(file: &mut File) -> Result<Option<Endian>> {
-    let saved_position = file.seek(SeekFrom::Current(0))?;
+    let saved_position = file.stream_position()?;
     let end_pos = file.seek(SeekFrom::End(0))?;
     if end_pos < 6 {
         return Ok(None);
@@ -191,12 +198,10 @@ pub fn get_endian_from_file(file: &mut File) -> Result<Option<Endian>> {
     if rec_typ[0] == 0_u8 && rec_sub[0] == 10_u8 {
         if u16::from_le_bytes(rec_len) == 2 {
             Ok(Some(Endian::Little))
+        } else if u16::from_be_bytes(rec_len) == 2 {
+            Ok(Some(Endian::Big))
         } else {
-            if u16::from_be_bytes(rec_len) == 2 {
-                Ok(Some(Endian::Big))
-            } else {
-                Ok(None)
-            }
+            Ok(None)
         }
     } else {
         Ok(None)
