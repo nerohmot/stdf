@@ -67,6 +67,7 @@ jobs:
       - name: post-rust-install on linux
         if: matrix.os == 'ubuntu-latest'
         run: |
+          echo "OS_ARCH=linux-${{ matrix.arch }}" >> $GITHUB_ENV
           cargo install cargo-deb
           cargo install cargo-rpm  
 
@@ -81,6 +82,7 @@ jobs:
       - name: post-rust-install on windows
         if: matrix.os == 'windows-latest'
         run: |
+          echo "OS_ARCH=windows-${{ matrix.arch }}" >> $GITHUB_ENV
           cargo install cargo-wix 
 
       - name: Install Rust on macOS
@@ -94,8 +96,11 @@ jobs:
       - name: post-rust-install on macOS
         if: matrix.os == 'macos-latest'
         run: |
+          echo "OS_ARCH=macos-${{ matrix.arch }}" >> $GITHUB_ENV
           cargo install cargo-bundle
       
+      - name: check OS_ARCH environment variable
+        run: echo $OS_ARCH
 
       # - name: Install Rust on linux/x86_64
         # if: matrix.arch == 'x64'
