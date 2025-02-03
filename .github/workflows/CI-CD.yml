@@ -58,13 +58,15 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-unknown-linux-gnu
-          components: rustfmt, clippy, cargo, rust-std, rustc, cargo-mrsv, cargo-script
+          components: rustfmt, clippy, cargo, rust-std, rustc
       
       - name: post-rust-install on linux
         if: matrix.os == 'ubuntu-latest'
         run: |
           echo "OS_ARCH=linux-${{ matrix.arch }}" >> $GITHUB_ENV
           echo "RUST_TARGET=${{ matrix.arch }}-unknown-linux-gnu" >> $GITHUB_ENV
+          cargo install cargo-msrv
+          cargo install cargo-script
           cargo install cargo-deb
           cargo install cargo-rpm  
 
@@ -74,13 +76,15 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-pc-windows-msvc
-          components: rustfmt, clippy, cargo, rust-std, rustc, cargo-mrsv, cargo-script
+          components: rustfmt, clippy, cargo, rust-std, rustc
 
       - name: post-rust-install on windows
         if: matrix.os == 'windows-latest'
         run: |
           echo "OS_ARCH=windows-${{ matrix.arch }}" >> $env:GITHUB_ENV
           echo "RUST_TARGET=${{ matrix.arch }}-pc-windows-msvc" >> $env:GITHUB_ENV
+          cargo install cargo-msrv
+          cargo install cargo-script
           cargo install cargo-wix 
 
       - name: Install Rust on macOS
@@ -89,14 +93,20 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-apple-darwin
-          components: rustfmt, clippy, cargo, rust-std, rustc, cargo-mrsv, cargo-script
+          components: rustfmt, clippy, cargo, rust-std, rustc
 
       - name: post-rust-install on macOS
         if: matrix.os == 'macos-latest'
         run: |
           echo "OS_ARCH=macos-${{ matrix.arch }}" >> $GITHUB_ENV
           echo "RUST_TARGET=${{ matrix.arch }}-apple-darwin" >> $GITHUB_ENV
+          cargo install cargo-msrv
+          cargo install cargo-script
           cargo install cargo-bundle
+
+
+# if release, the version number should be inserted here
+
 
       - name: Build on Linux/macOS
         if: matrix.os != 'windows-latest'
