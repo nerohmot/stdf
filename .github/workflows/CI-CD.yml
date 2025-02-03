@@ -48,7 +48,7 @@ jobs:
     # needs: lint
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest] #, macos-latest, windows-latest]
         rust: [stable]
         arch: [x64, arm64]
 
@@ -56,45 +56,54 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install Rust
+      - name: Install Rust on linux/aarch64
+        if: matrix.arch == 'arm64' && matrix.os == 'ubuntu-latest'
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.arch }}
+          target: aarch64-unknown-linux-gnu
 
-      - name: Build
-        run: cargo build --release --target ${{ matrix.arch }}
+      # - name: Install Rust on linux/x86_64
+        # if: matrix.arch == 'x64'
 
-      - name: Run tests
-        run: cargo test --release --target ${{ matrix.arch }}
 
-      - name: Install WiX Toolset on Windows
-        if: matrix.os == 'windows-latest'
-        run: choco install wixtoolset
+
+        #        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${{ matrix.rust }}
+
+
+      # - name: Build
+      #   run: cargo build --release #--target ${{ matrix.arch }}
+
+      # - name: Run tests
+      #   run: cargo test --release #--target ${{ matrix.arch }}
+
+      # - name: Install WiX Toolset on Windows
+      #   if: matrix.os == 'windows-latest'
+      #   run: choco install wixtoolset
   
-      - name: Install cargo-wix on Windows
-        if: matrix.os == 'windows-latest'
-        run: cargo install cargo-wix
+      # - name: Install cargo-wix on Windows
+      #   if: matrix.os == 'windows-latest'
+      #   run: cargo install cargo-wix
   
-      - name: Build MSI package on Windows
-        if: matrix.os == 'windows-latest'
-        run: cargo wix
+      # - name: Build MSI package on Windows
+      #   if: matrix.os == 'windows-latest'
+      #   run: cargo wix
   
-      - name: Upload MSI artifacts on Windows
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}-msi
-          path: target/wix/*.msi
-          retention-days: 1
+      # - name: Upload MSI artifacts on Windows
+      #   if: matrix.os == 'windows-latest'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ matrix.os }}-msi
+      #     path: target/wix/*.msi
+      #     retention-days: 1
 
-      - name: Install cargo-deb on Ubuntu
-        if: matrix.os == 'ubuntu-latest'
-        run: cargo install cargo-deb
+      # - name: Install cargo-deb on Ubuntu
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: cargo install cargo-deb
     
-      - name: Build Debian package on Ubuntu
-        if: matrix.os == 'ubuntu-latest'
-        run: cargo deb
+      # - name: Build Debian package on Ubuntu
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: cargo deb
 
       # - name: Show target directory contents
       #   if: matrix.os == 'ubuntu-latest'
@@ -102,13 +111,13 @@ jobs:
       #     sudo apt-get install -y tree
       #     tree target
 
-      - name: Upload debian artifacts on Ubuntu
-        if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}-deb
-          path: target/debian/**/*
-          retention-days: 1
+      # - name: Upload debian artifacts on Ubuntu
+      #   if: matrix.os == 'ubuntu-latest'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: ${{ matrix.os }}-deb
+      #     path: target/debian/**/*
+      #     retention-days: 1
 
   # package:
 
