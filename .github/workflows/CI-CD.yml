@@ -12,6 +12,15 @@ on:
   workflow_dispatch: 
 
 jobs:
+  sanity_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Sanity check
+        run: cargo check
+
   # check the msrv AFTER (successful) build!
   # msrv:
   #   name: Check MSRV
@@ -105,7 +114,7 @@ jobs:
         run: echo "OS_ARCH=$OS_ARCH"
 
       - name: check OS_ARCH environment variable for Windows
-        if: matrix.ox == 'windows-latest'
+        if: matrix.os == 'windows-latest'
         run: echo "OS_ARCH=$env:OS_ARCH"
 
      
