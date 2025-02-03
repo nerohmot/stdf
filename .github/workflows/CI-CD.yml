@@ -53,8 +53,8 @@ jobs:
         arch: [x86_64, aarch64]
 
     steps:
-      # - name: Checkout code
-      #   uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Install Rust on linux
         if: matrix.os == 'ubuntu-latest'
@@ -76,14 +76,27 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-pc-windows-msvc
-  
+          components: rustfmt, clippy, cargo, rust-std, rustc
+
+      - name: post-rust-install on windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install wixtoolset
+          cargo install cargo-wix
+
       - name: Install Rust on macOS
         if: matrix.os == 'macos-latest'
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-apple-darwin
-  
+          components: rustfmt, clippy, cargo, rust-std, rustc
+
+      - name: post-rust-install on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          cargo install cargo-bundle
+      
 
       # - name: Install Rust on linux/x86_64
         # if: matrix.arch == 'x64'
