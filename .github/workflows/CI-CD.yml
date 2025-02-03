@@ -62,6 +62,11 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-unknown-linux-gnu
+          components: rustfmt, clippy, cargo, rust-std, rustc
+      
+      - name: post-rust-install on linux
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo install cargo-deb  
 
       - name: Install Rust on windows
         if: matrix.os == 'windows-latest'
