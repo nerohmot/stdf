@@ -46,7 +46,7 @@ jobs:
       matrix:
         os: [ubuntu-latest] #, windows-latest, macos-latest] 
         rust: [stable]
-        arch: [x86_64, aarch64]
+        arch: [x86_64] #, aarch64]
 
     steps:
       - name: Checkout code
@@ -70,7 +70,7 @@ jobs:
           cargo install cargo-deb
           cargo install cargo-rpm
 
-      - name: install cross compiler on linux
+      - name: install cross compiler for aarch64 on linux
         if: matrix.os == 'ubuntu-latest' && matrix.arch == 'aarch64'
         run: |
           sudo apt-get update
