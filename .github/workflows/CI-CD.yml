@@ -100,7 +100,7 @@ jobs:
 
       - name: Build on Linux/macOS
         if: matrix.os != 'windows-latest'
-        run: cargo build --release --target $RUST_TARGET
+        run: cargo build --release --target $env:RUST_TARGET
 
       - name: Build on Windows
         if: matrix.os == 'windows-latest'
