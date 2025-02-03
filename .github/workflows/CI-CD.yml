@@ -113,18 +113,26 @@ jobs:
           echo "OS_ARCH=macos-${{ matrix.arch }}" >> $GITHUB_ENV
           echo "RUST_TARGET=${{ matrix.arch }}-apple-darwin" >> $GITHUB_ENV
           cargo install cargo-bundle
-      
-      - name: check environment variables for Linux/macOS
+
+      - name: Build
+        run: cargo build --release --target $RUST_TARGET
+
+      - name: Run tests
+        run: cargo test --release --target $RUST_TARGET
+
+      - name: check environment for Linux/macOS
         if: matrix.os != 'windows-latest'
         run: |
           echo "OS_ARCH=$OS_ARCH"
           echo "RUST_TARGET=$RUST_TARGET"
+          tree target
 
-      - name: check environment variables for Windows
+      - name: check environment for Windows
         if: matrix.os == 'windows-latest'
         run: |
           echo "OS_ARCH=$env:OS_ARCH"
           echo "RUST_TARGET=$env:RUST_TARGET"
+          tree target
 
      
       # - name: Install Rust on linux/x86_64
@@ -135,11 +143,7 @@ jobs:
         #        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${{ matrix.rust }}
 
 
-      # - name: Build
-      #   run: cargo build --release #--target ${{ matrix.arch }}
-
-      # - name: Run tests
-      #   run: cargo test --release #--target ${{ matrix.arch }}
+      
 
       # - name: Install WiX Toolset on Windows
       #   if: matrix.os == 'windows-latest'
