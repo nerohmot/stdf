@@ -18,8 +18,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Sanity check
+      - name: Check code
         run: cargo check
+
+      - name: Run tests
+        run: cargo test
 
   # check the msrv AFTER (successful) build!
   # msrv:
@@ -77,6 +80,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           echo "OS_ARCH=linux-${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "RUST_TARGET=${{ matrix.arch }}-unknown-linux-gnu" >> $GITHUB_ENV
           cargo install cargo-deb
           cargo install cargo-rpm  
 
@@ -91,8 +95,8 @@ jobs:
       - name: post-rust-install on windows
         if: matrix.os == 'windows-latest'
         run: |
-        
           echo "OS_ARCH=windows-${{ matrix.arch }}" >> $env:GITHUB_ENV
+          echo "RUST_TARGET=${{ matrix.arch }}-pc-windows-msvc" >> $env:GITHUB_ENV
           cargo install cargo-wix 
 
       - name: Install Rust on macOS
@@ -107,15 +111,20 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           echo "OS_ARCH=macos-${{ matrix.arch }}" >> $GITHUB_ENV
+          echo "RUST_TARGET=${{ matrix.arch }}-apple-darwin" >> $GITHUB_ENV
           cargo install cargo-bundle
       
-      - name: check OS_ARCH environment variable for Linux/macOS
+      - name: check environment variables for Linux/macOS
         if: matrix.os != 'windows-latest'
-        run: echo "OS_ARCH=$OS_ARCH"
+        run: |
+          echo "OS_ARCH=$OS_ARCH"
+          echo "RUST_TARGET=$TARGET"
 
-      - name: check OS_ARCH environment variable for Windows
+      - name: check environment variables for Windows
         if: matrix.os == 'windows-latest'
-        run: echo "OS_ARCH=$env:OS_ARCH"
+        run: |
+          echo "OS_ARCH=$env:OS_ARCH"
+          echo "RUST_TARGET=$env:TARGET"
 
      
       # - name: Install Rust on linux/x86_64
