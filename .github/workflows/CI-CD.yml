@@ -113,8 +113,8 @@ jobs:
       - name: tag to version on linux & macos
         if: matrix.os != 'windows-latest'
         run: |
-          echo"VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo"VERSION=$VERSION"  
+          echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo $VERSION  
 # if release, the version number should be inserted here
 
 
