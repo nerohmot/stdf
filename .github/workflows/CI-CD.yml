@@ -44,165 +44,103 @@ jobs:
     needs: check
     strategy:
       matrix:
-        os: [ubuntu-latest] #, windows-latest, macos-latest] 
+        os: [ubuntu-latest, windows-latest, macos-latest] 
         rust: [stable]
-        arch: [x86_64] #, aarch64]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install Rust on linux
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.arch }}-unknown-linux-gnu
-          components: rustfmt, clippy, cargo, rust-std, rustc 
+          override: true
       
-      - name: post-rust-install on linux
+      - name: post-rust-install on Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          echo "OS_ARCH=linux-${{ matrix.arch }}" >> $GITHUB_ENV
-          echo "RUST_TARGET=${{ matrix.arch }}-unknown-linux-gnu" >> $GITHUB_ENV
           cargo install cargo-msrv
           cargo install cargo-script
           cargo install cargo-deb
           cargo install cargo-rpm
-
-      - name: install cross compiler for aarch64 on linux
-        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'aarch64'
-        run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
 
-      - name: Install Rust on windows
-        if: matrix.os == 'windows-latest'
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.arch }}-pc-windows-msvc
-          components: rustfmt, clippy, cargo, rust-std, rustc
-
-      - name: post-rust-install on windows
+      - name: post-rust-install on Windows
         if: matrix.os == 'windows-latest'
         run: |
-          echo "OS_ARCH=windows-${{ matrix.arch }}" >> $env:GITHUB_ENV
-          echo "RUST_TARGET=${{ matrix.arch }}-pc-windows-msvc" >> $env:GITHUB_ENV
           cargo install cargo-msrv
           cargo install cargo-script
           cargo install cargo-wix 
 
-      - name: Install Rust on macOS
-        if: matrix.os == 'macos-latest'
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.arch }}-apple-darwin
-          components: rustfmt, clippy, cargo, rust-std, rustc
-
       - name: post-rust-install on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          echo "OS_ARCH=macos-${{ matrix.arch }}" >> $GITHUB_ENV
-          echo "RUST_TARGET=${{ matrix.arch }}-apple-darwin" >> $GITHUB_ENV
           cargo install cargo-msrv
           cargo install cargo-script
           cargo install cargo-bundle
+          brew install FiloSottile/musl-cross/musl-cross
+          rustup target add aarch64-unknown-linux-musl
 
-      - name: tag to version on linux & macos
-        if: matrix.os != 'windows-latest'
+      - name: tag to version on Linux/macOS
+        if: matrix.os != 'windows-latest' && github.event_name == 'release' #&& github.event.action == 'published'
         run: |
           echo "VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-          echo $VERSION  
-# if release, the version number should be inserted here
+          cargo script 
 
+      - name: tag to version on Windows
+        if: matrix.os == 'windows-latest' && github.event_name == 'release' #&& github.event.action == 'published'
+        run: |
+          echo "VERSION=$env:GITHUB_REF" >> $env:GITHUB_ENV
+          echo $env:VERSION
 
-      - name: Build on Linux/macOS
-        if: matrix.os != 'windows-latest'
-        run: cargo build --release --target $RUST_TARGET
+      - name: Build on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo build --release --target x86_64-unknown-linux-gnu
+          cargo build --release --target aarch64-unknown-linux-gnu
+
+      - name: Build on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-unknown-linux-musl
 
       - name: Build on Windows
         if: matrix.os == 'windows-latest'
-        run: cargo build --release --target $env:RUST_TARGET
+        run: |
+          cargo build --release --target x86_64-pc-windows-msvc
 
-      - name: Run tests on Linux/macOS
-        if: matrix.os != 'windows-latest'
-        run: cargo test --release --target $RUST_TARGET
+      - name: check environment
+        run: tree target
+
+      - name: Run tests on Linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo test --release --target x86_64-unknown-linux-gnu
+# Do I need QEMU for aarch64 tests?
+
+      - name: Run tests on macOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          cargo test --release --target x86_64-apple-darwin
+# Do I need QEMU for aarch64 tests?
 
       - name: Run tests on Windows
         if: matrix.os == 'windows-latest'
-        run: cargo test --release --target $env:RUST_TARGET
+        run: cargo test --release --target x86_64-pc-windows-msvc
 
-      - name: check environment for Linux/macOS
-        if: matrix.os != 'windows-latest'
-        run: |
-          echo "OS_ARCH=$OS_ARCH"
-          echo "RUST_TARGET=$RUST_TARGET"
-          tree target
 
-      - name: check environment for Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          echo "OS_ARCH=$env:OS_ARCH"
-          echo "RUST_TARGET=$env:RUST_TARGET"
-          tree target
+# here we build the packages for the os-es ...
+
+# then we upload the artifacts
+
+# then we deploy  the rpm/deb/msi packages
+# and what about pip & conda
+# and what about uploading to crates.io ?
 
      
-      # - name: Install Rust on linux/x86_64
-        # if: matrix.arch == 'x64'
-
-
-
-        #        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain ${{ matrix.rust }}
-
-
-      
-
-      # - name: Install WiX Toolset on Windows
-      #   if: matrix.os == 'windows-latest'
-      #   run: choco install wixtoolset
-  
-      # - name: Install cargo-wix on Windows
-      #   if: matrix.os == 'windows-latest'
-      #   run: cargo install cargo-wix
-  
-      # - name: Build MSI package on Windows
-      #   if: matrix.os == 'windows-latest'
-      #   run: cargo wix
-  
-      # - name: Upload MSI artifacts on Windows
-      #   if: matrix.os == 'windows-latest'
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ${{ matrix.os }}-msi
-      #     path: target/wix/*.msi
-      #     retention-days: 1
-
-      # - name: Install cargo-deb on Ubuntu
-      #   if: matrix.os == 'ubuntu-latest'
-      #   run: cargo install cargo-deb
-    
-      # - name: Build Debian package on Ubuntu
-      #   if: matrix.os == 'ubuntu-latest'
-      #   run: cargo deb
-
-      # - name: Show target directory contents
-      #   if: matrix.os == 'ubuntu-latest'
-      #   run: |
-      #     sudo apt-get install -y tree
-      #     tree target
-
-      # - name: Upload debian artifacts on Ubuntu
-      #   if: matrix.os == 'ubuntu-latest'
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ${{ matrix.os }}-deb
-      #     path: target/debian/**/*
-      #     retention-days: 1
-
-  # package:
-
 
   # deploy:
   #   runs-on: ubuntu-latest
@@ -210,3 +148,5 @@ jobs:
   #   if: github.event_name == 'release' && github.event.action == 'published'
   #   steps:
   #     - uses: actions/checkout@v2
+
+  
