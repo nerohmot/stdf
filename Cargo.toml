@@ -37,12 +37,13 @@ umya-spreadsheet = "2.2.2"
 #xz2 = "0.1"           # xz/lzma compression/decompression
 #zip = "2.2"           # zip/zstd/bz2 compression/decompression
 
-cargo-msrv = "0.17.1"
-cargo-script = "0.2.8"
+
 
 
 [dev-dependencies]
 tempfile = "3.2"
+cargo-msrv = "0.17.1"
+cargo-script = "0.2.8"
 
 [[bin]]
 name = "hvcl_tc"

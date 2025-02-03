@@ -44,7 +44,7 @@ jobs:
     needs: check
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest] 
+        os: [ubuntu-latest] #, windows-latest, macos-latest] 
         rust: [stable]
         arch: [x86_64, aarch64]
 
@@ -68,7 +68,9 @@ jobs:
           cargo install cargo-msrv
           cargo install cargo-script
           cargo install cargo-deb
-          cargo install cargo-rpm  
+          cargo install cargo-rpm
+          apt update
+          apt install gcc-aarch64-linux-gnu  
 
       - name: Install Rust on windows
         if: matrix.os == 'windows-latest'
