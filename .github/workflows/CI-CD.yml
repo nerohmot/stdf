@@ -57,7 +57,7 @@ jobs:
 
   build:
     runs-on: ${{ matrix.os }}
-    # needs: lint
+    needs: sanity_check
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest] 
@@ -118,13 +118,13 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           echo "OS_ARCH=$OS_ARCH"
-          echo "RUST_TARGET=$TARGET"
+          echo "RUST_TARGET=$RUST_TARGET"
 
       - name: check environment variables for Windows
         if: matrix.os == 'windows-latest'
         run: |
           echo "OS_ARCH=$env:OS_ARCH"
-          echo "RUST_TARGET=$env:TARGET"
+          echo "RUST_TARGET=$env:RUST_TARGET"
 
      
       # - name: Install Rust on linux/x86_64
