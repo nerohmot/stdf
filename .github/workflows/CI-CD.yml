@@ -69,8 +69,12 @@ jobs:
           cargo install cargo-script
           cargo install cargo-deb
           cargo install cargo-rpm
-          apt update
-          apt install gcc-aarch64-linux-gnu  
+
+      - name: install cross compiler on linux
+        if: matrix.os == 'ubuntu-latest' && matrix.arch == 'aarch64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Install Rust on windows
         if: matrix.os == 'windows-latest'
