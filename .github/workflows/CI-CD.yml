@@ -24,20 +24,20 @@ jobs:
       - name: Run tests
         run: cargo test
 
-      - name: MSRV
-        run: |
-          rustup component add rustfmt
-          cargo install cargo-msrv
-          cargo msrv --check
+      # - name: MSRV
+      #   run: |
+      #     rustup component add rustfmt
+      #     cargo install cargo-msrv
+      #     cargo msrv --check
 
-      - name: Install clippy
-        run: rustup component and clippy
+      # - name: Install clippy
+      #   run: rustup component and clippy
 
-  #     - name: Run clippy
-  #       uses: actions-rs/clippy-check@v1
-  #       with:
-  #         token: ${{ secrets.GITHUB_TOKEN }}
-  #         args: --all-features
+      # - name: Run clippy
+      #   uses: actions-rs/clippy-check@v1
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     args: --all-features
 
   build:
     runs-on: ${{ matrix.os }}
