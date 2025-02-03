@@ -12,7 +12,7 @@ on:
   workflow_dispatch: 
 
 jobs:
-  sanity_check:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,30 +24,14 @@ jobs:
       - name: Run tests
         run: cargo test
 
-  # check the msrv AFTER (successful) build!
-  # msrv:
-  #   name: Check MSRV
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2
+      - name: MSRV
+        run: |
+          rustup component add rustfmt
+          cargo install cargo-msrv
+          cargo msrv --check
 
-  #     - name: Install Rust & check MSRV
-  #       run: rustup component add rustfmt
-  #       run: cargo install cargo-msrv
-  #       run: cargo msrv --check
-
-
-  # lint:
-  #   name: Lint
-  #   runs-on: ubuntu-latest
-  #   needs: msrv
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v2
-
-  #     - name: Install Rust & clippye
-  #       run: rustup component and clippy
+      - name: Install clippy
+        run: rustup component and clippy
 
   #     - name: Run clippy
   #       uses: actions-rs/clippy-check@v1
@@ -74,7 +58,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-unknown-linux-gnu
-          components: rustfmt, clippy, cargo, rust-std, rustc
+          components: rustfmt, clippy, cargo, rust-std, rustc, cargo-mrsv, cargo-script
       
       - name: post-rust-install on linux
         if: matrix.os == 'ubuntu-latest'
@@ -90,7 +74,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-pc-windows-msvc
-          components: rustfmt, clippy, cargo, rust-std, rustc
+          components: rustfmt, clippy, cargo, rust-std, rustc, cargo-mrsv, cargo-script
 
       - name: post-rust-install on windows
         if: matrix.os == 'windows-latest'
@@ -105,7 +89,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-apple-darwin
-          components: rustfmt, clippy, cargo, rust-std, rustc
+          components: rustfmt, clippy, cargo, rust-std, rustc, cargo-mrsv, cargo-script
 
       - name: post-rust-install on macOS
         if: matrix.os == 'macos-latest'
@@ -114,11 +98,21 @@ jobs:
           echo "RUST_TARGET=${{ matrix.arch }}-apple-darwin" >> $GITHUB_ENV
           cargo install cargo-bundle
 
-      - name: Build
+      - name: Build on Linux/macOS
+        if: matrix.os != 'windows-latest'
         run: cargo build --release --target $RUST_TARGET
 
-      - name: Run tests
+      - name: Build on Windows
+        if: matrix.os == 'windows-latest'
+        run: cargo build --release --target $env:RUST_TARGET
+
+      - name: Run tests on Linux/macOS
+        if: matrix.os != 'windows-latest'
         run: cargo test --release --target $RUST_TARGET
+
+      - name: Run tests on Windows
+        if: matrix.os != 'windows-latest'
+        run: cargo test --release --target $env:RUST_TARGET
 
       - name: check environment for Linux/macOS
         if: matrix.os != 'windows-latest'
