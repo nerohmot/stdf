@@ -58,7 +58,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.arch }}-unknown-linux-gnu
-          components: rustfmt, clippy, cargo, rust-std, rustc
+          components: rustfmt, clippy, cargo, rust-std, rustc 
       
       - name: post-rust-install on linux
         if: matrix.os == 'ubuntu-latest'
@@ -127,7 +127,7 @@ jobs:
         run: cargo test --release --target $RUST_TARGET
 
       - name: Run tests on Windows
-        if: matrix.os != 'windows-latest'
+        if: matrix.os == 'windows-latest'
         run: cargo test --release --target $env:RUST_TARGET
 
       - name: check environment for Linux/macOS
