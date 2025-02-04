@@ -1,0 +1,10 @@
+language = "C"
+
+[export]
+include = ["stdf"]
+
+[parse]
+parse_deps = true
+
+[cpp_compat]
+namespace = "stdf"

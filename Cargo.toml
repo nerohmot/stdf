@@ -8,6 +8,9 @@ categories = ["parser-implementations", "encoding"]
 license = "Apache-2.0"
 edition = "2021"
 
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
 [dependencies]
 byte = "0.2"
 memmap = "0.7"
@@ -38,10 +41,11 @@ umya-spreadsheet = "2.2.2"
 #zip = "2.2"           # zip/zstd/bz2 compression/decompression
 
 
-
+[build-dependencies]
+cbindgen = "0.20.0"
 
 [dev-dependencies]
-tempfile = "3"
+tempfile = "3.16.0"
 cargo-msrv = "0.17.1"
 cargo-script = "0.2.8"
 
