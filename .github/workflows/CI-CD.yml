@@ -65,9 +65,8 @@ jobs:
           cargo install cargo-deb
           cargo install cargo-rpm
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
           rustup target add x86_64-unknown-linux-gnu
-          
+# sudo apt-get install -y gcc-aarch64-linux-gnu
 # rustup target add aarch64-unknown-linux-gnu
 
       - name: post-rust-install on Windows
@@ -77,6 +76,9 @@ jobs:
           cargo install cargo-script
           cargo install cargo-wix 
           rustup target add x86_64-pc-windows-msvc
+# Invoke-WebRequest -Uri "https://developer.arm.com/-/media/Files/downloads/gnu-rm/10.3-2021.10/gcc-arm-none-eabi-10.3-2021.10-win32.exe" -OutFile "gcc-arm-none-eabi.exe"
+# Start-Process -FilePath "gcc-arm-none-eabi.exe" -ArgumentList "/S" -Wait
+# echo "C:\Program Files (x86)\GNU Arm Embedded Toolchain\10 2021.10\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: post-rust-install on macOS
         if: matrix.os == 'macos-latest'
@@ -105,7 +107,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           cargo build --release --target x86_64-unknown-linux-gnu
-          cargo build --release --target aarch64-unknown-linux-gnu
+# cargo build --release --target aarch64-unknown-linux-gnu
 
       - name: Build on macOS
         if: matrix.os == 'macos-latest'
