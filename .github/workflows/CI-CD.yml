@@ -82,6 +82,7 @@ jobs:
           cargo install cargo-bundle
           brew install FiloSottile/musl-cross/musl-cross
           rustup target add aarch64-unknown-linux-musl
+          rustup target add x86_64-apple-darwin
 
       - name: tag to version on Linux/macOS
         if: matrix.os != 'windows-latest' && github.event_name == 'release' #&& github.event.action == 'published'
@@ -149,4 +150,3 @@ jobs:
   #   steps:
   #     - uses: actions/checkout@v2
 
-  
