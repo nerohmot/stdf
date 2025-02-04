@@ -109,8 +109,8 @@ jobs:
       - name: Build on macOS
         if: matrix.os == 'macos-latest'
         run: |
-          cargo build --release --target x86_64-apple-darwin
-          cargo build --release --target aarch64-unknown-linux-musl
+          cargo build --release -vv --target x86_64-apple-darwin
+          cargo build --release -vv --target aarch64-unknown-linux-musl
 
       - name: Build on Windows
         if: matrix.os == 'windows-latest'
