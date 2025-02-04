@@ -58,7 +58,7 @@ maintainer = "Casey Marshall <git@cmars.tech>, Tom Hören <thor@Semi-ATE.com>"
 depends = "libc6 (>= 2.27)"
 license-file = ["LICENSE"]
 assets = [
-    ["target/release/hvcl_tc", "usr/bin/", "755"]
+    ["target/release/hvcl_tc", "usr/bin/", "755"],
     ["target/release/stdf", "usr/bin/", "755"]
 ]
 
