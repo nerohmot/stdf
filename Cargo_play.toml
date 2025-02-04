@@ -41,7 +41,7 @@ umya-spreadsheet = "2.2.2"
 
 
 [dev-dependencies]
-tempfile = "3"
+tempfile = "3.2"
 cargo-msrv = "0.17.1"
 cargo-script = "0.2.8"
 
@@ -59,7 +59,6 @@ depends = "libc6 (>= 2.27)"
 license-file = ["LICENSE"]
 assets = [
     ["target/release/hvcl_tc", "usr/bin/", "755"]
-    ["target/release/stdf", "usr/bin/", "755"]
 ]
 
 [package.metadata.wix]

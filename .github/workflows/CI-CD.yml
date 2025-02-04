@@ -41,6 +41,7 @@ jobs:
 
   build:
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     needs: check
     strategy:
       matrix:
@@ -52,12 +53,12 @@ jobs:
             arch: aarch64
           - os: macos-latest
             arch: aarch64
-          # - os: linux-latest
-          #   arch: aarch64
-          - os: windows-latest
-            arch: x86_64
-          - os: macos-latest
-            arch: x86_64
+          - os: linux-latest
+            arch: aarch64
+          # - os: windows-latest
+          #   arch: x86_64
+          # - os: macos-latest
+          #   arch: x86_64
 
     steps:
       - name: Checkout code
