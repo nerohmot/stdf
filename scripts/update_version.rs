@@ -2,7 +2,7 @@
 // cargo-script: edition="2021"
 // Version: 1.0.0
 
-extern crate toml;
+// extern crate toml;
 
 use std::env;
 use std::fs;
