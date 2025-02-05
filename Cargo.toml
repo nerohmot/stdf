@@ -15,7 +15,7 @@ crate-type = ["rlib", "cdylib", "staticlib"]
 byte = "0.2"
 memmap = "0.7"
 stdf-record-derive = {path="stdf-record-derive", version="0.2"}
-clap = { version = "4.5", features = ["cargo"]}
+clap = { version = "4.5", features = ["cargo", "derive"]}
 indicatif = "0.17.11"
 time = { version = "0.3", features = ["formatting"] }
 file-format = "0.26.0"
@@ -40,7 +40,7 @@ umya-spreadsheet = "2.2.2"
 #xz2 = "0.1"           # xz/lzma compression/decompression
 #zip = "2.2"           # zip/zstd/bz2 compression/decompression
 
-
+cbindgen = "0.20"
 [build-dependencies]
 cbindgen = "0.20.0"
 
@@ -48,6 +48,10 @@ cbindgen = "0.20.0"
 tempfile = "3.16.0"
 cargo-msrv = "0.17.1"
 cargo-script = "0.2.8"
+
+[[bin]]
+name = "brol"
+path = "src/bin/brol.rs"
 
 [[bin]]
 name = "hvcl_tc"

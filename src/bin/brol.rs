@@ -1,50 +1,15 @@
-#!/usr/bin/env rust-script
-//! ```cargo
-//! [package]
-//! edition = "2021"
-//! version = "1.0.0"
-//!
-//! [dependencies]
-//! cbindgen = "0.20"
-//! clap = "4.0"
-//! lazy_static = "1.5"
-//! ```
-
 use std::env;
 use std::fs;
 use std::path::PathBuf;
 use cbindgen::{Config, Language};
 use clap::{Arg, Command};
 
-lazy_static! {
-    static ref EXTENSIONS: HashMap<&'static str, &'static str> = {
-        let mut m = HashMap::new();
-        m.insert("c", "h");
-        m.insert("cxx", "hpp");
-        m.insert("cython", "pxd");
-        m
-    };    
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = Command::new("create_header_files")
         .arg(Arg::new("target")
             .short('t')
             .long("target")
-            .required(true)
-            .possible_values(["x86_64-unknown-linux-gnu", 
-                              "x86_64-apple-darwin", 
-                              "x86_64-pc-windows-msvc",
-                              "aarch64-unknown-linux-gnu",
-                              "aarch64-apple-darwin",
-                              "aarch64-pc-windows-msvc"])
-        )
-        .arg(Arg::new("language")
-            .short('l')
-            .long("language")
-            .required(true)
-            .possible_values(["c", "cxx", "cython"])
-        )
+            .required(true))
         .get_matches();
 
     let build_target = matches.get_one::<String>("target").unwrap();
@@ -83,18 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     fs::create_dir(&include_dir)?;
 
+    let config = Config::from_file(cbindgen_toml_path.join("cbindgen.toml"))?;
 
-
-
-
-
-    let config = Config::from_file(cbindgen_toml_path)?;
-
-
-
-
-
-    
     let c_header_path = include_dir.join("stdf.h");
     cbindgen::Builder::new()
         .with_config(config.clone())
