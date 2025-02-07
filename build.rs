@@ -1,5 +1,7 @@
+use std::process;
 fn main() {
     println!("cargo:error=Boe");
+    process::exit(1);
     println!("cargo:warning=shouldn't see this one");
 //     let env_vars = [
 //         "CARGO_MANIFEST_DIR",
