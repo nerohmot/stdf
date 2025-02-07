@@ -49,6 +49,8 @@ fn main() {
             match host {
                 "x86_64-pc-windows-msvc" => {
                     match target {
+                        "x86_64-pc-windows-msvc" => {
+                        }
                         "aarch64-pc-windows-msvc" => {
                             println!("cargo:warning=Cross compiling from x86_64-pc-windows-msvc to aarch64-pc-windows-msvc");
                         }
@@ -56,6 +58,19 @@ fn main() {
                             println!("cargo:error=Cross compiling from {} to {} not supported!", host, target);
                             std::process::exit(1);
     
+                        }
+                    }
+                }
+                "x86_64-unknown-linux-gnu" => {
+                    match target {
+                        "x86_64-unknown-linux-gnu" => {
+                        }
+                        "aarch64-unknown-linux-gnu" => {
+                            println!("cargo:warning=Cross compiling from x86_64-unknown-linux-gnu to aarch64-unknown-linux-gnu");
+                        }
+                        _ => {
+                            println!("cargo:error=Cross compiling from {} to {} not supported!", host, target);
+                            std::process::exit(1);
                         }
                     }
                 }
