@@ -1,42 +1,5 @@
 use std::process;
 fn main() {
-
-
-    if let Ok(host) = std::env::var("HOST") {
-        let host = host.as_str();
-        if let Ok(target) = std::env::var("TARGET") {
-            let target = target.as_str();
-            match host {
-                "x86_64-pc-windows-msvc" => {
-                    match target {
-                        "aarch64-pc-windows-msvc" => {
-                            println!("cargo:warning=Cross compiling from x86_64-pc-windows-msvc to aarch64-pc-windows-msvc");
-                        }
-                        _ => {
-                            println!("cargo:error=Cross compiling from {} to {} not supported!", host, target);
-                            std::process::exit(1);
-    
-                        }
-                    }
-                }
-                _ => {
-                    println!("cargo:warning=Cross compiling from {} to {} not supported!", host, target);
-                    std::process::exit(1);
-                }
-            }
-        } else {
-            println!("cargo:error=TARGET not found");
-            std::process::exit(1);
-        }
-    } else {
-        println!("cargo:error=HOST not found");
-        std::process::exit(1);
-    }
-
-
-    // println!("cargo:error=Boe");
-    // process::exit(1);
-    // println!("cargo:warning=shouldn't see this one");
     let env_vars = [
         "CARGO_MANIFEST_DIR",
         "OUT_DIR",
@@ -79,4 +42,34 @@ fn main() {
         }
     }
 
+    if let Ok(host) = std::env::var("HOST") {
+        let host = host.as_str();
+        if let Ok(target) = std::env::var("TARGET") {
+            let target = target.as_str();
+            match host {
+                "x86_64-pc-windows-msvc" => {
+                    match target {
+                        "aarch64-pc-windows-msvc" => {
+                            println!("cargo:warning=Cross compiling from x86_64-pc-windows-msvc to aarch64-pc-windows-msvc");
+                        }
+                        _ => {
+                            println!("cargo:error=Cross compiling from {} to {} not supported!", host, target);
+                            std::process::exit(1);
+    
+                        }
+                    }
+                }
+                _ => {
+                    println!("cargo:warning=Cross compiling from {} to {} not supported!", host, target);
+                    std::process::exit(1);
+                }
+            }
+        } else {
+            println!("cargo:error=TARGET not found");
+            std::process::exit(1);
+        }
+    } else {
+        println!("cargo:error=HOST not found");
+        std::process::exit(1);
+    }
 }
