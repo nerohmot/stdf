@@ -42,12 +42,12 @@ umya-spreadsheet = "2.2.2"
 
 cbindgen = "0.20"
 [build-dependencies]
-cbindgen = "0.20.0"
+# cbindgen = "0.20.0"
 
 [dev-dependencies]
 tempfile = "3.16.0"
 cargo-msrv = "0.17.1"
-cargo-script = "0.2.8"
+rust-script = "0.35.0"
 
 [[bin]]
 name = "brol"
