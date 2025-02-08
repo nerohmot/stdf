@@ -49,16 +49,16 @@ jobs:
         rust: [stable]
         arch: [x86_64, aarch64]
         exclude:
-          - os: windows-latest
+          # - os: windows-latest
+          #   arch: aarch64
+          - os: macos-latest
             arch: aarch64
-          # - os: macos-latest
-          #   arch: aarch64
-          # - os: ubuntu-latest
-          #   arch: aarch64
-          - os: windows-latest
-            arch: x86_64
-          # - os: macos-latest
+          - os: ubuntu-latest
+            arch: aarch64
+          # - os: windows-latest
           #   arch: x86_64
+          - os: macos-latest
+            arch: x86_64
 
     steps:
       - name: Checkout code
