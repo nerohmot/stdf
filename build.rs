@@ -1,4 +1,4 @@
-use std::process::{Command, exit};
+use std::process::Command;
 fn main() {
     let env_vars = [
         "CARGO_MANIFEST_DIR",
